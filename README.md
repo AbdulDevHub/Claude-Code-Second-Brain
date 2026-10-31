@@ -1,16 +1,12 @@
 # Second Brain: A 3D Memory Visualizer for Claude Code
 
-**See everything Claude Code knows about you, as an interactive 3D knowledge graph.**
-
-**[▶ Live demo](https://abduldevhub.github.io/Claude-Code-Second-Brain/)** · [Run it on your own `~/.claude`](#run-it) · [How it works](#how-it-works)
+![Second Brain overview: a dotted orange orb of memories with skills and apps orbiting it on rings](docs/screenshots/hero.png)
 
 [![Live demo](https://img.shields.io/badge/demo-live-ff6a2b)](https://abduldevhub.github.io/Claude-Code-Second-Brain/)
 [![Tests](https://github.com/AbdulDevHub/Claude-Code-Second-Brain/actions/workflows/test.yml/badge.svg)](https://github.com/AbdulDevHub/Claude-Code-Second-Brain/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 ![Node 18.3+](https://img.shields.io/badge/node-%E2%89%A518.3-339933)
 ![Zero dependencies](https://img.shields.io/badge/dependencies-0-success)
-
-![Second Brain overview: a dotted orange orb of memories with skills and apps orbiting it on rings](docs/screenshots/hero.png)
 
 ## Project Overview
 
@@ -24,7 +20,7 @@ Claude Code remembers you through plain files in `~/.claude`: your `CLAUDE.md`, 
 ## What you are looking at
 
 | | |
-|---|---|
+| --- | --- |
 | **Core** (white sparkle, center) | `~/.claude/CLAUDE.md`, the global instructions loaded into every session. The white cluster around it holds its `##` sections. |
 | **Hubs** (ringed, labelled) | One per category: Memory, Notes, Skills, Mods, MCP Servers, Agents, Reference. Each takes its category's color. |
 | **Memories and notes** (orange, red) | `projects/*/memory/*.md`, the facts Claude saved per project, and the notes index, as bright points on the orb. |
@@ -50,7 +46,7 @@ Claude Code remembers you through plain files in `~/.claude`: your `CLAUDE.md`, 
 ## Views
 
 | Tab | What it shows |
-|---|---|
+| --- | --- |
 | **3D orbs** | **Orb**: the dotted sphere with its two orbit rings. **Neural**: the original force-directed 3D graph. |
 | **2D map** | **Force**, **Circle**, **Hex** (honeycomb tiles) and **Rings** (concentric sectors per category, skills and apps on the outer rings). Drag pans. |
 | **Timeline** | One lane per category, placed by last-modified date. Recent weeks get more room than old months. |
@@ -87,7 +83,7 @@ The chrome stays minimal: tab pills, search, a Motion toggle with a speed slider
 ```
 
 | Piece | What it does |
-|---|---|
+| --- | --- |
 | [`scripts/lib/sources.mjs`](scripts/lib/sources.mjs) | One scanner per source (CLAUDE.md, memory, notes, skills, mods, plugins, agents, MCP, reference). It reads on/off state from the same places as the Toolbox mod. |
 | [`scripts/lib/graph.mjs`](scripts/lib/graph.mjs) | Node/link registry with de-duplication and cross-link resolution: `[[wikilinks]]`, relative `.md` links, and name mentions with context rules so plain words like "review" don't create false links. |
 | [`scripts/lib/redact.mjs`](scripts/lib/redact.mjs) | Ordered scrub rules (emails, then home paths in Windows/Git Bash/POSIX forms, then encoded project folders, then whole-word usernames) plus the final leak check. |
@@ -115,13 +111,14 @@ npm test             # 23 tests: parser, redaction, MCP secrets, odd config file
 ### Build options
 
 | Command | Result |
-|---|---|
+| --- | --- |
 | `npm run build` | Your full brain, contents included. `data.js` is git-ignored. |
 | `npm run build:public -- --out public/data.js` | Structure, titles and descriptions only, with document contents withheld. Memory titles and descriptions still ship, so read them before you publish. |
 | `node scripts/build.mjs --redact my-handle` | Scrub extra words. You can also list them in `redact.local.txt` (git-ignored). |
 | `node scripts/build.mjs --home path/to/home --out file.js` | Build from any folder that contains a `.claude` directory. |
 
 <a id="parked-tools"></a>
+
 ### Parked tools
 
 "Parked" means installed but switched off. I toggle tools with **Toolbox**, my own Claude Code mod that moves skills, mods and MCP servers between on and off locations without uninstalling them. The scanner reads the same state as the Toolbox mod: `~/.claude/skills-disabled/`, `CLAUDE_CODE_PLUGIN_DIRS` and `enabledPlugins` in `settings.json`, `mcpServers` in `~/.claude.json`, and `~/.claude/toolbox/parked-mcp.json`.
