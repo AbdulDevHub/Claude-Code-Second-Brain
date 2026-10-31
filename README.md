@@ -1,30 +1,25 @@
 # Second Brain: A 3D Memory Visualizer for Claude Code
 
+**See everything Claude Code knows about you, as an interactive 3D knowledge graph.**
+
+**[▶ Live demo](https://abduldevhub.github.io/Claude-Code-Second-Brain/)** · [Run it on your own `~/.claude`](#run-it) · [How it works](#how-it-works)
+
 [![Live demo](https://img.shields.io/badge/demo-live-ff6a2b)](https://abduldevhub.github.io/Claude-Code-Second-Brain/)
 [![Tests](https://github.com/AbdulDevHub/Claude-Code-Second-Brain/actions/workflows/test.yml/badge.svg)](https://github.com/AbdulDevHub/Claude-Code-Second-Brain/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 ![Node 18.3+](https://img.shields.io/badge/node-%E2%89%A518.3-339933)
 ![Zero dependencies](https://img.shields.io/badge/dependencies-0-success)
 
-**See everything Claude Code knows about you.** Second Brain scans your `~/.claude` folder (`CLAUDE.md`, project memories, notes, skills, plugins, MCP servers and sub-agents) and draws it as an interactive 3D knowledge graph, 2D maps and a timeline. It runs in the browser from a single HTML file, with no install and no dependencies.
-
-**[Try the live demo →](https://abduldevhub.github.io/Claude-Code-Second-Brain/)** (a fictional demo brain), or [run it on your own `~/.claude`](#run-it) in one command.
-
-Every glowing node is a real file Claude reads before it works: global instructions, per-project memories, notes, skills, mods, MCP servers and sub-agents. Lines between nodes are real links between those files.
-
-Knowledge sits on a dotted 3D orb, skills ride an orbit ring as beads, and apps (mods, MCP servers, agents) orbit as hex badges. The same brain can also be laid out as 2D rings, hex tiles, a circle, a force graph or a timeline, and thousands of dust particles morph between them.
-
-Built from scratch: hand-written layouts, a dependency-free 3D physics engine, a perspective camera and a Canvas 2D renderer, with no graph library and no WebGL framework.
-
 ![Second Brain overview: a dotted orange orb of memories with skills and apps orbiting it on rings](docs/screenshots/hero.png)
 
 ## Project Overview
 
-Claude Code keeps what it knows about me in plain files: my global instructions, notes and facts it saved per project, plus the skills, plugins and connected tools it can use. Those files are what make each new session feel like it remembers me, but they're scattered across folders and hard to see as a whole.
+Claude Code remembers you through plain files in `~/.claude`: your `CLAUDE.md`, per-project memories, notes, skills, plugins, MCP servers and sub-agents. They're scattered across folders and hard to see as a whole. Second Brain turns them into something you can explore.
 
-Second Brain turns that folder into something you can explore. A small build script reads every file, works out how they link to each other, and strips anything personal before writing it out. A web page then draws the result as a glowing orb you can spin, a set of 2D maps, a timeline of recent edits, and decks of skills and apps. Click any point to read the file behind it.
-
-Everything is hand-built: the layouts, the physics, the camera and the renderer. There's no graph or 3D library, so it loads instantly and runs straight from a file on disk.
+- **Every node is a real file**, and every line is a real link between files (`[[wikilinks]]`, references, tool mentions). Click one to read it.
+- **Seven views of one brain:** a dotted 3D orb, a 3D force graph, 2D rings, hex, circle and force maps, and a timeline, with thousands of particles morphing between them.
+- **Private by default:** a local build script scans and scrubs your files, and refuses to write output if anything personal survives.
+- **Built from scratch:** hand-written layouts, 3D physics, camera and Canvas 2D renderer. No graph library, no WebGL, no npm dependencies. It opens straight from disk.
 
 ## What you are looking at
 
