@@ -1,0 +1,5 @@
+{
+  "name": "focus-mode",
+  "version": "1.0.0",
+  "description": "Hides tool calls behind a one-line progress checklist."
+}

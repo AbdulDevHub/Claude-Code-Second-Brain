@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Second Brain · 3D Claude Code memory visualizer</title>
+  <meta name="description" content="See everything Claude Code knows about you. Second Brain turns ~/.claude (CLAUDE.md, memories, notes, skills, plugins, MCP servers, agents) into an interactive 3D knowledge graph, 2D maps and a timeline. Vanilla JS, no dependencies.">
+  <meta name="keywords" content="Claude Code, Claude memory, CLAUDE.md, knowledge graph, second brain, 3D graph visualization, force-directed graph, MCP servers, AI agent memory, Canvas 2D">
+  <meta name="author" content="Abdul Hadi Khan">
+  <meta name="theme-color" content="#000000">
+  <link rel="canonical" href="https://abduldevhub.github.io/Claude-Code-Second-Brain/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Second Brain">
+  <meta property="og:title" content="Second Brain · 3D Claude Code memory visualizer">
+  <meta property="og:description" content="An interactive 3D map of everything Claude Code knows about you: memories, notes, skills, plugins, MCP servers and agents.">
+  <meta property="og:url" content="https://abduldevhub.github.io/Claude-Code-Second-Brain/">
+  <meta property="og:image" content="https://abduldevhub.github.io/Claude-Code-Second-Brain/docs/screenshots/hero.png">
+  <meta property="og:image:width" content="1440">
+  <meta property="og:image:height" content="900">
+  <meta property="og:image:alt" content="A dotted orange orb of memories with skills and apps orbiting it on rings">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Second Brain · 3D Claude Code memory visualizer">
+  <meta name="twitter:description" content="An interactive 3D map of everything Claude Code knows about you.">
+  <meta name="twitter:image" content="https://abduldevhub.github.io/Claude-Code-Second-Brain/docs/screenshots/hero.png">
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"SoftwareApplication","name":"Second Brain","applicationCategory":"DeveloperApplication","operatingSystem":"Any (web browser)","description":"An interactive 3D knowledge graph of Claude Code's memory (~/.claude): CLAUDE.md, memories, notes, skills, plugins, MCP servers and agents.","url":"https://abduldevhub.github.io/Claude-Code-Second-Brain/","codeRepository":"https://github.com/AbdulDevHub/Claude-Code-Second-Brain","license":"https://opensource.org/licenses/MIT","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Person","name":"Abdul Hadi Khan","url":"https://github.com/AbdulDevHub"}}
+  </script>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><polygon points='24,3 42,13.5 42,34.5 24,45 6,34.5 6,13.5' fill='%23000' stroke='%23ff6a2b' stroke-width='3.5'/><circle cx='24' cy='24' r='6' fill='%23fff1e0'/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Brand mark, reused by the header and the boot screen -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb347"/><stop offset="1" stop-color="#ff3b30"/></linearGradient>
+      <symbol id="mark" viewBox="0 0 48 48">
+        <g class="spin"><circle cx="24" cy="24" r="23" fill="none" stroke="#ff6a2b" stroke-opacity=".35" stroke-dasharray="2 5"/></g>
+        <polygon points="24,4 41.3,14 41.3,34 24,44 6.7,34 6.7,14" fill="none" stroke="url(#lg)" stroke-width="2.4"/>
+        <g stroke="#ffb98f" stroke-width="1" stroke-opacity=".7">
+          <line x1="24" y1="24" x2="15" y2="16"/><line x1="24" y1="24" x2="33.5" y2="17"/><line x1="24" y1="24" x2="31" y2="32.5"/>
+          <line x1="24" y1="24" x2="15.5" y2="31.5"/>
+        </g>
+        <circle cx="15" cy="16" r="2" fill="#ff6a2b"/><circle cx="33.5" cy="17" r="2" fill="#ffb347"/>
+        <circle cx="31" cy="32.5" r="2" fill="#3aa0ff"/><circle cx="15.5" cy="31.5" r="2" fill="#ff3b30"/>
+        <circle cx="24" cy="24" r="4" fill="#fff"/>
+      </symbol>
+      <symbol id="i-github" viewBox="0 0 16 16"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></symbol>
+      <symbol id="i-linkedin" viewBox="0 0 16 16"><path fill="currentColor" d="M0 1.15C0 .52.52 0 1.18 0h13.64C15.48 0 16 .52 16 1.15v13.7c0 .63-.52 1.15-1.18 1.15H1.18C.52 16 0 15.48 0 14.85V1.15zm4.94 12.24V6.17H2.54v7.22h2.4zM3.74 5.18c.84 0 1.36-.55 1.36-1.25-.02-.71-.52-1.25-1.34-1.25-.82 0-1.36.54-1.36 1.25 0 .7.52 1.25 1.32 1.25h.02zm4.9 8.21V9.36c0-.22.02-.43.08-.59.17-.43.57-.88 1.23-.88.87 0 1.21.66 1.21 1.63v3.87h2.4V9.25c0-2.22-1.18-3.25-2.76-3.25-1.27 0-1.84.7-2.16 1.19v.03h-.02l.02-.03V6.17h-2.4c.03.68 0 7.22 0 7.22h2.4z"/></symbol>
+    </defs>
+  </svg>
+
+  <canvas id="graph" aria-label="Map of everything Claude remembers"></canvas>
+  <div class="fx fx-vignette"></div>
+
+  <!-- Boot sequence -->
+  <div id="boot" class="boot" role="status" aria-live="polite">
+    <div class="boot-inner">
+      <div class="boot-logo">
+        <div class="logo"><svg><use href="#mark"/></svg></div>
+        <div><div class="boot-title"><b>SECOND</b> BRAIN</div><div class="boot-sub">NEURAL INDEX // COLD START</div></div>
+      </div>
+      <pre id="boot-log" class="boot-log"></pre>
+      <div class="boot-bar"><i id="boot-fill"></i></div>
+      <div class="boot-pct"><span id="boot-stage">INITIALIZING</span><span id="boot-num">0%</span></div>
+    </div>
+  </div>
+
+  <header class="hud hud-top">
+    <div class="brand-col">
+      <div class="brand">
+        <div class="logo"><svg><use href="#mark"/></svg></div>
+        <h1><b>SECOND</b> BRAIN</h1>
+      </div>
+      <div class="view-name" id="view-name">3D ORBS</div>
+      <div class="brand-actions">
+        <button id="menu" class="pill" aria-expanded="false" aria-controls="drawer"><span class="burger"><i></i><i></i><i></i></span>Menu</button>
+        <button id="sys" class="pill">System</button>
+      </div>
+    </div>
+    <div class="nav-col">
+      <div class="nav-row">
+        <div class="motion">
+          <button id="orbit" class="pill accent on" aria-pressed="true"><span class="sq"></span>Motion</button>
+          <input id="speed" type="range" min="0" max="200" value="100" aria-label="Motion speed">
+        </div>
+        <nav class="tabs" id="tabs" aria-label="Views"></nav>
+        <button id="recenter" class="pill icon" aria-label="Reset view" title="Reset view"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5"/></svg></button>
+      </div>
+      <div class="search">
+        <label><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM21 21l-5-5"/></svg><input id="search" type="search" placeholder="Search the brain…" autocomplete="off" spellcheck="false" aria-label="Search the brain"></label>
+        <div id="results" class="results" hidden></div>
+      </div>
+      <div class="subtabs" id="subtabs" aria-label="Layouts"></div>
+    </div>
+  </header>
+
+  <!-- Menu drawer: everything the minimal view hides -->
+  <aside id="drawer" class="drawer" aria-hidden="true">
+    <div class="drawer-head">
+      <div class="status"><span class="led"></span>LINK ACTIVE <span>·</span> <b id="clock">--:--:--</b> <span>·</span> <span id="synced"></span></div>
+      <button id="drawer-close" class="close" aria-label="Close menu">×</button>
+    </div>
+    <div class="drawer-scroll">
+      <section class="module"><h4>TELEMETRY <span class="aside" id="node-count"></span></h4><div id="stats"></div></section>
+      <section class="module"><h4>CHANNELS</h4><div id="filters"></div></section>
+      <section class="module activity"><h4>ACTIVITY · 30D <span class="aside" id="activity-note"></span></h4><div id="activity"></div></section>
+      <section class="module log"><h4>EVENT LOG</h4><div id="log" class="log-list"></div></section>
+      <section class="module runtime">
+        <h4>RUNTIME</h4>
+        <dl id="runtime"></dl>
+        <div class="signature">ARCHITECT <b>A. H. KHAN</b>
+          <a href="https://github.com/AbdulDevHub/" target="_blank" rel="noopener" aria-label="GitHub"><svg><use href="#i-github"/></svg></a>
+          <a href="https://www.linkedin.com/in/abdul-hadi-khan" target="_blank" rel="noopener" aria-label="LinkedIn"><svg><use href="#i-linkedin"/></svg></a>
+        </div>
+      </section>
+    </div>
+  </aside>
+
+  <!-- Skills and Applications decks -->
+  <section id="deck" class="deck" hidden></section>
+
+  <div class="hud zoom" role="group" aria-label="Zoom">
+    <button class="pill" data-zoom="out" aria-label="Zoom out">−</button>
+    <button class="pill" data-zoom="fit">Fit</button>
+    <button class="pill" data-zoom="in" aria-label="Zoom in">+</button>
+  </div>
+
+  <div id="tooltip" class="tooltip module" hidden></div>
+
+  <aside id="panel" class="panel module" aria-hidden="true">
+    <div class="panel-head" id="panel-head"></div>
+    <button id="close" class="close" aria-label="Close">×</button>
+    <div class="panel-scroll" id="panel-body"></div>
+  </aside>
+
+  <!-- System architecture -->
+  <div id="modal" class="modal" aria-hidden="true">
+    <div class="module" role="dialog" aria-label="System architecture">
+      <button class="close" id="modal-close" aria-label="Close">×</button>
+      <div class="eyebrow">SYSTEM // ARCHITECTURE</div>
+      <h2>HOW THIS BRAIN WORKS</h2>
+      <p class="lede">Every node is a real file Claude reads before it works: global rules, per-project memories, notes, skills, mods, MCP servers and sub-agents. Parked tools that are switched off in Toolbox appear too, drawn with dashed rims. A build step turns that folder into a graph. Seven hand-written layouts (a dotted 3D orb, a force-directed 3D graph, four 2D maps and a timeline) place it, and a canvas renderer draws it with thousands of dust particles at 60&nbsp;fps. There's no graph library or WebGL framework.</p>
+      <div class="pipeline" id="pipeline"></div>
+      <div class="specs" id="specs"></div>
+      <ul class="features">
+        <li><b>Custom 3D force engine.</b> Many-body repulsion, Hooke springs with degree bias, gravity and soft collisions, cooled on an alpha schedule. Same model as d3-force, rebuilt for three dimensions.</li>
+        <li><b>Perspective orbit camera.</b> Every camera property eases toward a goal, so fly-to, follow, zoom, pinch and auto-orbit share one code path.</li>
+        <li><b>Morphing dust.</b> Every layout writes the same number of seeded particles, so switching views morphs one cloud into the next point by point. They're batched by color and brightness into a few dozen fills per frame.</li>
+        <li><b>Fast glow pipeline.</b> Glows, hex badges and icons are pre-rendered once and stamped with additive blending, so there are no per-frame gradients for the heaviest layer.</li>
+        <li><b>Privacy by construction.</b> Five ordered redaction rules scrub emails, usernames and home paths, and the build refuses to ship if anything slips through.</li>
+        <li><b>Knowledge-graph extraction.</b> A YAML frontmatter parser, a <code>[[wikilink]]</code> and relative-path resolver, and mention detection across every document.</li>
+        <li><b>Live, not hand-made.</b> Running <code>npm run open</code> rescans the whole folder in a fraction of a second. The graph grows as Claude learns. <code>node:test</code> suites cover the parser, redaction, MCP secret handling, malformed config files, the camera math and every layout.</li>
+      </ul>
+      <div class="stack"><span>VANILLA JS</span><span>CANVAS 2D</span><span>NODE.JS</span><span>CUSTOM PHYSICS</span><span>MARKED</span><span>DOMPURIFY</span><span>ZERO BUILD TOOLS</span></div>
+      <div class="signature">DESIGNED &amp; ENGINEERED BY <b>ABDUL HADI KHAN</b>
+        <a href="https://github.com/AbdulDevHub/" target="_blank" rel="noopener" aria-label="GitHub"><svg><use href="#i-github"/></svg></a>
+        <a href="https://www.linkedin.com/in/abdul-hadi-khan" target="_blank" rel="noopener" aria-label="LinkedIn"><svg><use href="#i-linkedin"/></svg></a>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js" integrity="sha384-/TQbtLCAerC3jgaim+N78RZSDYV7ryeoBCVqTuzRrFec2akfBkHS7ACQ3PQhvMVi" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" integrity="sha384-+VfUPEb0PdtChMwmBcBmykRMDd+v6D/oFmB3rZM/puCMDYcIvF968OimRh4KQY9a" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="data.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/glyphs.js"></script>
+  <script src="js/layouts.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

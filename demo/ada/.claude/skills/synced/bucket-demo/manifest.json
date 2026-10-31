@@ -1,0 +1,16 @@
+{
+  "skills": [
+    {
+      "name": "pdf",
+      "description": "Read, merge and fill PDF files."
+    },
+    {
+      "name": "xlsx",
+      "description": "Create and edit spreadsheets with formulas."
+    },
+    {
+      "name": "deep-research",
+      "description": "Research a topic across many sources and write a report."
+    }
+  ]
+}

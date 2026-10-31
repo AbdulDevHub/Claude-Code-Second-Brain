@@ -1,0 +1,5 @@
+{
+  "name": "cost-meter",
+  "version": "1.0.0",
+  "description": "Shows token spend and cache hits for the current session."
+}

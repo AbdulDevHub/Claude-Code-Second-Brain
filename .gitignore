@@ -1,0 +1,17 @@
+# Your own brain. Generated from ~/.claude, so it stays local unless you build with --public on purpose.
+/data.js
+redact.local.txt
+
+node_modules/
+.env*
+/.claude/
+.vscode/
+.idea/
+Desktop.ini
+.playwright-mcp/
+.DS_Store
+Thumbs.db
+*.log
+
+# Third-party reference material, never published
+V2 Upgrade/

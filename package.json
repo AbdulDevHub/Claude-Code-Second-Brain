@@ -1,0 +1,43 @@
+{
+  "name": "second-brain",
+  "version": "2.0.0",
+  "description": "A live 3D neural map of everything Claude Code knows about you, built from ~/.claude with a hand-written physics engine.",
+  "author": "Abdul Hadi Khan (https://github.com/AbdulDevHub)",
+  "license": "MIT",
+  "homepage": "https://abduldevhub.github.io/Claude-Code-Second-Brain/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AbdulDevHub/Claude-Code-Second-Brain.git"
+  },
+  "bugs": {
+    "url": "https://github.com/AbdulDevHub/Claude-Code-Second-Brain/issues"
+  },
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=18.3"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:public": "node scripts/build.mjs --public",
+    "build:demo": "node scripts/build.mjs --home demo/ada --out demo/data.js",
+    "open": "node scripts/build.mjs && node scripts/open.mjs",
+    "serve": "npx --yes http-server -p 4173 -c-1 -s",
+    "test": "node --test"
+  },
+  "keywords": [
+    "claude-code",
+    "claude",
+    "anthropic",
+    "claude-md",
+    "ai-memory",
+    "mcp",
+    "knowledge-graph",
+    "second-brain",
+    "3d-visualization",
+    "force-directed-graph",
+    "canvas",
+    "visualization",
+    "vanilla-js"
+  ]
+}

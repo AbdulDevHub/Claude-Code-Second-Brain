@@ -1,0 +1,9 @@
+{
+  "env": {
+    "CLAUDE_CODE_PLUGIN_DIRS": "C:\\Users\\ada\\.claude\\plugins\\focus-mode"
+  },
+  "enabledPlugins": {
+    "prettier-hooks@community": true,
+    "jira-sync@atlassian": false
+  }
+}

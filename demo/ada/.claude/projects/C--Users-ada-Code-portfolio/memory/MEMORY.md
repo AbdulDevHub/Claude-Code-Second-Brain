@@ -1,0 +1,3 @@
+- [Deploy target](deploy-target.md) — static export to a CDN, no server
+- [Design tokens](design-tokens.md) — one accent colour, 8px spacing grid
+- [Owner profile](owner-profile.md) — frontend developer who prefers small PRs

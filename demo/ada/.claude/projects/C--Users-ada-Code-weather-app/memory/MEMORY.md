@@ -1,0 +1,2 @@
+- [API rate limits](api-rate-limits.md) — the weather API allows 60 calls a minute
+- [Units preference](units-preference.md) — metric by default, imperial behind a toggle
