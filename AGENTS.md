@@ -13,7 +13,7 @@ Vanilla JS (ES2022), Canvas 2D, Node 18.3+ (no npm dependencies). Browser loads 
 
 ## Commands
 - `npm run build` — scan your `~/.claude` into `data.js` · `npm run build:demo` — rebuild `demo/data.js`
-- `npm run open` — build, then open `index.html` · `npm test` — node:test suites (23 tests)
+- `npm run open` — build, then open `index.html` · `npm test` — node:test suites (25 tests)
 - Playwright can't open `file://`; serve the folder over http (e.g. `npm run serve`, port 4173) to screenshot.
 
 ## Code map

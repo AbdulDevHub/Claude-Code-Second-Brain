@@ -9,7 +9,7 @@ When old log entries stop being useful, fold them into the "Earlier history" par
 - v2 look (warm orange on black, after the `V2 Upgrade/` reference): tabs for 3D orbs (Orb, Neural), 2D map (Force, Circle, Hex, Rings), Timeline, Skills deck and Applications deck.
 - Decorative dust (6,500 points on desktop, 4,000 on phones) morphs between layouts. Tools are drawn as hex badges or bead badges with line icons.
 - Old HUD panels (telemetry, channels, activity, event log, runtime) live in the Menu drawer. The last view is saved in localStorage.
-- 23 tests pass (`npm test`). README screenshots were refreshed for v2.
+- 25 tests pass (`npm test`). README screenshots were refreshed for v2.
 
 ## In progress
 - Nothing active.
@@ -22,6 +22,11 @@ When old log entries stop being useful, fold them into the "Earlier history" par
 - Publish: create the public GitHub repo, enable Pages (main, root), set the About description, topics and social preview image.
 
 ## Session log
+### 2026-11-06 — issue #1 fixes
+- `CLAUDE_CODE_PLUGIN_DIRS` now splits on `:` on POSIX (only `;` when a drive letter or `;` appears) via `splitPluginDirs()`; before, multi-dir lists on macOS/Linux marked no mods as on.
+- Frontmatter: a blank `key:` is `''` unless indented keys follow, so `name:` alone no longer crashes the build.
+- Weighed Vite/React: declined for now (see chat); the canvas core would not benefit and `file://` opening would break.
+
 ### 2026-10-30 — public release prep
 - Added SEO metadata to `index.html` (keywords, canonical, Open Graph, Twitter card, JSON-LD), keyword-rich README title, badges, live-demo link and FAQ, `package.json` repo fields and keywords, a CI test workflow and `.nojekyll`. `V2 Upgrade/` is now git-ignored.
 

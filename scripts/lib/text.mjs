@@ -33,13 +33,15 @@ export function frontmatter(text) {
   if (!m) return { meta: {}, body: text };
   const meta = {};
   let parent = null;
-  for (const line of m[1].split('\n')) {
+  const lines = m[1].split('\n');
+  for (const [i, line] of lines.entries()) {
     const kv = line.match(/^(\s*)([\w-]+):\s*(.*)$/);
     if (!kv) continue;
     const [, indent, key, raw] = kv;
     const val = raw.replace(/^["']|["']$/g, '');
     if (indent && parent) meta[parent][key] = val;
-    else if (!raw) { parent = key; meta[key] = {}; }
+    // A bare `key:` is a parent only when indented keys follow; otherwise it is an empty value.
+    else if (!raw && /^\s+[\w-]+:/.test(lines[i + 1] ?? '')) { parent = key; meta[key] = {}; }
     else { parent = null; meta[key] = val; }
   }
   for (const [key, val] of Object.entries(meta)) {

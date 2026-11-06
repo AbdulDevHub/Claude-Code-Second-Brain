@@ -153,12 +153,18 @@ function scanSkills(g, ctx) {
   }
 }
 
+/** Splits a CLAUDE_CODE_PLUGIN_DIRS value: ';' on Windows (or when a drive letter appears), ':' otherwise. */
+export function splitPluginDirs(raw) {
+  if (typeof raw !== 'string') return [];
+  const sep = raw.includes(';') || /(^|;)[A-Za-z]:[\\/]/.test(raw) ? ';' : ':';
+  return raw.split(sep).map((p) => p.trim()).filter(Boolean);
+}
+
 // ---------- mods: local plugin folders + marketplace plugins ----------
 function scanMods(g, ctx) {
   const pluginsDir = join(ctx.claude, 'plugins');
   const raw = objectOr(ctx.settings.env).CLAUDE_CODE_PLUGIN_DIRS;
-  // Windows lists use ';'. POSIX lists use ':', but not the ':' of a drive letter like C:\.
-  const onDirs = (typeof raw === 'string' ? raw : '').split(/;|:(?![\\/])/).map((p) => normalizePath(p.trim())).filter(Boolean);
+  const onDirs = splitPluginDirs(raw).map(normalizePath);
   // A full-path match (what Claude Code uses), or a `/plugins/<name>` suffix so a copied or relocated
   // home folder (like the demo) still resolves. Trade-off: two plugin folders with the same name both count as on.
   const isOn = (dir, d) => onDirs.some((p) => p === normalizePath(dir) || p.endsWith(`/plugins/${d.toLowerCase()}`));

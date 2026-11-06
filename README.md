@@ -103,7 +103,7 @@ Requires Node 18.3+. There are no dependencies to install.
 npm run build:demo   # optional: rebuild the bundled demo brain
 npm run build        # scan your own ~/.claude into data.js
 npm run open         # build, then open index.html in your browser
-npm test             # 23 tests: parser, redaction, MCP secrets, odd config files, graph, camera, physics, layouts
+npm test             # 25 tests: parser, redaction, MCP secrets, odd config files, graph, camera, physics, layouts
 ```
 
 `index.html` opens straight from disk. With no `data.js`, it falls back to the fictional demo brain in [`demo/`](demo/), so a fresh clone works right away.

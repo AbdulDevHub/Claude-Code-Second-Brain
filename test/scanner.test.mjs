@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { frontmatter, firstHeading } from '../scripts/lib/text.mjs';
 import { createRedactor } from '../scripts/lib/redact.mjs';
 import { BrainGraph, mentionPattern } from '../scripts/lib/graph.mjs';
-import { mcpEndpoint, projectLabel } from '../scripts/lib/sources.mjs';
+import { mcpEndpoint, projectLabel, splitPluginDirs } from '../scripts/lib/sources.mjs';
 import { build } from '../scripts/build.mjs';
 
 const DEMO_HOME = fileURLToPath(new URL('../demo/ada', import.meta.url));
@@ -19,6 +19,19 @@ test('frontmatter: flat keys, one level of nesting and folded block scalars', ()
   assert.equal(meta.description, 'first line second line');
   assert.equal(body, 'Body');
   assert.deepEqual(frontmatter('no frontmatter').meta, {});
+});
+
+test('frontmatter: a blank value is an empty string, not a parent object', () => {
+  const { meta } = frontmatter('---\nname:\ndescription: hi\n---\n');
+  assert.equal(meta.name, '');
+  assert.equal(meta.description, 'hi');
+});
+
+test('plugin dirs split on ":" for POSIX and ";" for Windows', () => {
+  assert.deepEqual(splitPluginDirs('/Users/me/a:/Users/me/b'), ['/Users/me/a', '/Users/me/b']);
+  assert.deepEqual(splitPluginDirs('C:\\a;D:/b'), ['C:\\a', 'D:/b']);
+  assert.deepEqual(splitPluginDirs('C:\\only'), ['C:\\only']);
+  assert.deepEqual(splitPluginDirs(undefined), []);
 });
 
 test('firstHeading drops a trailing aside', () => {
