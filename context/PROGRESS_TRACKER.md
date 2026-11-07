@@ -22,6 +22,10 @@ When old log entries stop being useful, fold them into the "Earlier history" par
 - Publish: create the public GitHub repo, enable Pages (main, root), set the About description, topics and social preview image.
 
 ## Session log
+### 2026-11-06 — social preview image
+- Added a 1200×630 share card `docs/og-image.png` (brand, headline, orb crop from `screenshots/hero.png`); its source is `docs/og-template.html`. `og:image`/`twitter:image` now point to it.
+- Still to do by hand: upload it as the GitHub repo's social preview (Settings → General).
+
 ### 2026-11-06 — issue #1 fixes
 - `CLAUDE_CODE_PLUGIN_DIRS` now splits on `:` on POSIX (only `;` when a drive letter or `;` appears) via `splitPluginDirs()`; before, multi-dir lists on macOS/Linux marked no mods as on.
 - Frontmatter: a blank `key:` is `''` unless indented keys follow, so `name:` alone no longer crashes the build.
