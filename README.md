@@ -52,7 +52,7 @@ Claude Code remembers you through plain files in `~/.claude`: your `CLAUDE.md`, 
 | **2D map** | **Force**, **Circle**, **Hex** (honeycomb tiles) and **Rings** (concentric sectors per category, skills and apps on the outer rings). Drag pans. |
 | **Timeline** | One lane per category, placed by last-modified date. Recent weeks get more room than old months. |
 | **Skills** | A deck of every skill ranked by size, with its rough token cost and active/parked state. |
-| **Applications** | MCP servers, mods and agents as hex tiles. |
+| **Applications** | MCP servers, mods and agents as hex tiles. Agents kept in subfolders of `~/.claude/agents/` show their folder. |
 | **Health** | What to tidy in `~/.claude`, grouped by problem, with a one-line fix for each group. Click a card to open the file. |
 
 The chrome stays minimal: tab pills, search, a Motion toggle with a speed slider, and zoom controls. **Menu** opens a drawer with telemetry, channels, the activity chart, the event log and the runtime readout.
@@ -60,6 +60,8 @@ The chrome stays minimal: tab pills, search, a Motion toggle with a speed slider
 ![Rings view: concentric dotted sectors per category, with skills and apps on the outer rings](docs/screenshots/rings.png)
 
 ![Timeline view: one lane per category, nodes placed by last-modified date](docs/screenshots/timeline.png)
+
+![Health tab: a 24/25 clean score, then groups of memories to tidy, each with a one-line fix and cards that open the file](docs/screenshots/health.png)
 
 ## Features
 
@@ -107,7 +109,7 @@ Requires Node 18.3+. There are no dependencies to install.
 npm run build:demo   # optional: rebuild the bundled demo brain
 npm run build        # scan your own ~/.claude into data.js
 npm run open         # build, then open index.html in your browser
-npm test             # 30 tests: parser, redaction, MCP secrets, odd config files, graph, health, camera, physics, layouts
+npm test             # 31 tests: parser, redaction, MCP secrets, odd config files, graph, health, camera, physics, layouts
 ```
 
 `index.html` opens straight from disk. With no `data.js`, it falls back to the fictional demo brain in [`demo/`](demo/), so a fresh clone works right away.
