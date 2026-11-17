@@ -14,7 +14,7 @@ Read before touching the build, layouts or renderer. Update when a layer, data f
 ## Browser layers
 - **app.js:** turns BRAIN into fixed-shape node and link objects (adds `x/y/z`, `tx/ty/tz` targets, physics fields and sprite slots). It owns the view state (`VIEWS`, `setView`, `setLayout`), the camera framing (`viewRect`, `fitDist` from the layout `extent`), pointer input, data sheet (with copy pills), decks (Skills, Applications, Health), drawer, search, filters and the boot sequence.
 - **layouts.js:** `prepare(nodes, links)` builds branches (one per hub, DFS order), angular sectors, a palette and the base radius `R`. `build(name, ctx, count)` writes targets onto nodes and returns `{ extent, captions, dust }`.
-  - Structured layouts: `orb` (knowledge, skills and hooks as sunflower islands on the shell, apps on one gapped ring), `circle`, `hex`, `rings`, `timeline`. Nodes ease toward their targets each frame.
+  - Structured layouts: `orb` (knowledge, skills and hooks as uniform dots on an even lattice over the shell, labelled on hover via `state.shell`; apps on one gapped ring), `circle`, `hex`, `rings`, `timeline`. Nodes ease toward their targets each frame.
   - Physics layouts: `neural` (3D), `force` (2D, `physics.flat = true`). `PHYSICS` and `FLAT` sets say which is which.
   - Branch kinds: `inner` (knowledge hubs), `bead` (skills, hooks: beads on the inner ring in 2D Rings, islands on the orb shell), `app` (mods, MCP, agents).
 - **engine.js:** `Physics` (d3-force style in 3D; `flat` decays z) and `OrbitCamera` (goal-easing; `project`, `rotate`, `unprojectDelta`).

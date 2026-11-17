@@ -124,8 +124,8 @@
   const runOf = (ctx, kind) => ctx.branches.filter((b) => b.kind === kind).flatMap((b) => (b.hub ? [b.hub, ...b.items] : b.items));
 
   // ---------- 3D: orb ----------
-  // Knowledge, skills and hooks as islands on a dotted sphere, instructions in a white cluster at the center, and
-  // apps (mods, MCP servers, agents) as hex badges on one orbit ring.
+  // Knowledge, skills and hooks as evenly spread dots on a dotted sphere, instructions in a white cluster at the
+  // center, and apps (mods, MCP servers, agents) as hex badges on one orbit ring.
   const TB = 0.08; // ring tilts; the camera pitch shows them as ellipses
   function orb(ctx, rand, d, out) {
     const { R, core, sections, branches, palette } = ctx;
@@ -133,57 +133,34 @@
     ctx.sectorize(branches); // other layouts re-slice the sectors
     if (core) at(core, 0, 0, 0);
     fibSphere(sections, R * 0.16);
-    // Each inner branch becomes tidy "islands" on the shell inside its sector: loose items in one sunflower patch,
-    // every sub-folder in its own patch with the folder node at the patch center.
-    const onShell = (n, lat, lon) => at(n, R * Math.cos(lat) * Math.cos(lon), -R * Math.sin(lat), R * Math.cos(lat) * Math.sin(lon));
-    // Apps live on the ring; everything else (knowledge, skills, hooks) shares out the shell.
+    // Real nodes stand in for the shell's dust: every knowledge, skill and hook node takes one point of an even
+    // Fibonacci lattice over the whole sphere, so they read as the sphere's own dots. Points are dealt out by longitude,
+    // so each branch owns a wedge (colored to match in the dust below) and sub-folders stay next to their contents.
+    // As more nodes arrive the lattice just gets denser. Apps keep the ring; branch hubs sit inside, under their wedge.
     const inner = branches.filter((x) => x.kind !== 'app');
-    if (inner.length) ctx.sectorize(inner);
-    inner.forEach((b, bi) => {
-      const am = (b.a0 + b.a1) / 2, span = b.a1 - b.a0, pad = Math.min(0.1, span * 0.1);
-      if (b.hub) at(b.hub, Math.cos(am) * R * 0.55, 0, Math.sin(am) * R * 0.55);
-      const groups = [], loose = [];
-      for (let j = 0; j < b.items.length; j++) {
-        const n = b.items[j], dep = ctx.depth.get(n.id) || 1;
-        if (dep === 1 && (ctx.depth.get(b.items[j + 1]?.id) || 0) > 1) {
-          const g = [n];
-          while (j + 1 < b.items.length && (ctx.depth.get(b.items[j + 1].id) || 1) > 1) g.push(b.items[++j]);
-          groups.push(g);
-        } else loose.push(n);
+    const surface = inner.flatMap((b) => b.items);
+    const shellIds = new Set(surface.map((n) => n.id));
+    if (surface.length) {
+      const N = surface.length, base = -Math.PI / 2;
+      const pts = Array.from({ length: N }, (_, i) => {
+        const y = N === 1 ? 0 : 1 - ((i + 0.5) / N) * 2, q = Math.sqrt(1 - y * y), th = i * GOLDEN + base;
+        return { x: Math.cos(th) * q, y, z: Math.sin(th) * q, a: wrap(th - base) };
+      }).sort((p, q) => p.a - q.a);
+      let k = 0, prevEnd = 0;
+      for (const b of inner) {
+        const first = k;
+        for (const n of b.items) { const p = pts[k++]; at(n, p.x * R, p.y * R, p.z * R); }
+        const lastA = k > first ? pts[k - 1].a : prevEnd, firstA = k > first ? pts[first].a : prevEnd;
+        b.a0 = base + (first === 0 ? 0 : (prevEnd + firstA) / 2);
+        b.a1 = base + (k >= N ? TAU : (lastA + pts[k].a) / 2);
+        prevEnd = lastA;
+        const am = (b.a0 + b.a1) / 2;
+        if (b.hub) at(b.hub, Math.cos(am) * R * 0.55, 0, Math.sin(am) * R * 0.55);
       }
-      if (loose.length) groups.unshift(loose);
-      if (!groups.length) return;
-      // Pick the patch scale and number of rows so the patches fit the sector without crowding.
-      const avail = Math.max(0.2, span - 2 * pad);
-      let rows, c = 0.085, lanes;
-      for (rows = groups.length >= 4 ? 2 : 1; rows <= 3; rows++) {
-        lanes = Array.from({ length: rows }, () => ({ g: [], w: 0 }));
-        for (const g of groups) {
-          const lane = lanes.reduce((m, l) => (l.w < m.w ? l : m));
-          lane.g.push(g); lane.w += 2 * Math.sqrt(g.length) + 1.6;
-        }
-        c = Math.min(0.085, avail / Math.max(...lanes.map((l) => l.w)));
-        if (c >= 0.05) break;
-      }
-      rows = lanes.length;
-      const tall = Math.max(...groups.map((g) => Math.sqrt(g.length)));
-      const rowGap = Math.min(0.62, c * (2 * tall + 1.6));
-      lanes.forEach((lane, r) => {
-        const tilt = rows === 1 ? (bi % 2 ? -0.42 : 0.42) : 0; // lone rows sit off the equator, clear of the bead ring
-        const lat0 = (r - (rows - 1) / 2) * rowGap + tilt, cl = Math.cos(lat0);
-        let lon = am - (lane.w * c) / cl / 2;
-        for (const g of lane.g) {
-          const half = (Math.sqrt(g.length) + 0.8) * c / cl;
-          lon += half;
-          g.forEach((n, k) => {
-            const rho = c * Math.sqrt(k) * 1.15, th = k * GOLDEN;
-            const lat = lat0 + rho * Math.sin(th);
-            onShell(n, lat, lon + (rho * Math.cos(th)) / Math.cos(lat));
-          });
-          lon += half;
-        }
-      });
-    });
+      // Keep the wedges contiguous for sectorOf even when a branch has no items.
+      for (let i = 1; i < inner.length; i++) inner[i].a0 = inner[i - 1].a1;
+    } else if (inner.length) ctx.sectorize(inner);
+    out.shell = shellIds;
     // Rings: groups (a hub or sub-folder and what follows it) are separated by a small gap so they read as arcs.
     const ring = (list, r, t) => {
       const gapBefore = list.map((n, i) => ((n.type === 'hub' || (ctx.depth.get(list[i + 1]?.id) || 0) > (ctx.depth.get(n.id) || 0)) ? 1.5 : 0));
@@ -482,13 +459,13 @@
   const LAYOUTS = { orb, neural, force, circle: circleLayout, hex, rings, timeline };
 
   // Compute one layout: writes tx/ty/tz on the nodes (except physics layouts) and returns
-  // { extent: {w, h} | null, captions: [], dust: { pos, col, lvl, count } }.
+  // { extent: {w, h} | null, captions: [], dust: { pos, col, lvl, count }, shell: Set of node ids drawn as plain sphere dots | null }.
   function build(name, ctx, count, seed = 7) {
     const fn = LAYOUTS[name];
     if (!fn) throw new Error(`unknown layout: ${name}`);
     const rand = rng(seed * 7919 + name.length * 104729 + name.charCodeAt(0));
     const dust = makeDust(count);
-    const out = { extent: null, captions: [], dust, haze: null };
+    const out = { extent: null, captions: [], dust, haze: null, shell: null };
     fn(ctx, rand, dust, out);
     while (dust.n < dust.count) {
       const [x, y, z, c, l] = out.haze(rand);

@@ -25,8 +25,8 @@ Claude Code remembers you through plain files in `~/.claude`: your `CLAUDE.md`, 
 | **Core** (white sparkle, center) | `~/.claude/CLAUDE.md`, the global instructions loaded into every session. The white cluster around it holds its `##` sections. |
 | **Hubs** (ringed, labelled) | One per category: Memory, Notes, Skills, Mods, MCP Servers, Agents, Hooks, Reference. Each takes its category's color. |
 | **Memories and notes** (orange, red) | `projects/*/memory/*.md`, the facts Claude saved per project, and the notes index, as bright points on the orb. |
-| **Skills** (amber beads) | Local skills, claude.ai-synced skills and **parked** skills switched off in [Toolbox](#parked-tools), as islands on the orb's sphere (the inner ring in the 2D Rings map). |
-| **Hooks** (teal beads) | Scripts registered under `hooks` in your `settings.json`, in each mod's `hooks/hooks.json` and in each project's `.claude/settings.json`, one per script and grouped by owner, with their events, matchers and timeouts. The commands themselves are never read into the output. Like skills, they sit as islands on the orb's sphere. |
+| **Skills** (amber beads) | Local skills, claude.ai-synced skills and **parked** skills switched off in [Toolbox](#parked-tools), as dots on the orb's sphere (the inner ring in the 2D Rings map). |
+| **Hooks** (teal beads) | Scripts registered under `hooks` in your `settings.json`, in each mod's `hooks/hooks.json` and in each project's `.claude/settings.json`, one per script and grouped by owner, with their events, matchers and timeouts. The commands themselves are never read into the output. Like skills, they are dots on the orb's sphere. |
 | **Apps** (blue hex badges) | Mods, marketplace plugins, MCP servers and agents on the outer ring. MCP servers show only a secret-free host or package name. |
 | **Dashed rims** | Parked tools: installed but switched off. They carry no signal pulses. |
 | **Solid / dashed lines** | Structure and `[[wikilinks]]` / mentions of a tool inside a document. Faint in the structured layouts, lit when you hover or select. |
@@ -49,7 +49,7 @@ Claude Code remembers you through plain files in `~/.claude`: your `CLAUDE.md`, 
 
 | Tab | What it shows |
 | --- | --- |
-| **3D orbs** | **Orb**: the dotted sphere, with knowledge, skills and hooks as islands on its surface and apps on one orbit ring. **Neural**: the original force-directed 3D graph. |
+| **3D orbs** | **Orb**: the dotted sphere, made of your knowledge, skills and hooks as evenly spread dots (named on hover) topped up with decorative dust, and apps on one orbit ring. **Neural**: the original force-directed 3D graph. |
 | **2D map** | **Force**, **Circle**, **Hex** (honeycomb tiles) and **Rings** (concentric sectors per category, skills and apps on the outer rings). Drag pans. |
 | **Timeline** | One lane per category, placed by last-modified date. Recent weeks get more room than old months. |
 | **Skills** | A deck of every skill ranked by size, with its rough token cost and active/parked state. |

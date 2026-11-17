@@ -154,6 +154,10 @@
       canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
     }
 
+    // On the orb, knowledge, skills and hooks are the sphere's own dots: one size, one shape, only the color differs.
+    const SHELL_R = 4.2;
+    const onShell = (n) => state.shell !== null && state.shell !== undefined && state.shell.has(n.id);
+    const bodyR = (n) => (onShell(n) ? SHELL_R : n.r);
     const fogAt = (depth) => (state.flat ? 1 : clamp(1.3 - (depth / cam.dist) * 0.62, 0.12, 1));
 
     // ---------- layers ----------
@@ -339,6 +343,17 @@
           ctx.globalCompositeOperation = 'source-over';
           continue;
         }
+        if (onShell(n)) {
+          const D = Math.max(1.6, SHELL_R * s);
+          ctx.globalAlpha = fog * (dormant ? 0.25 : 0.7);
+          const G = D * 5 * pulse;
+          ctx.drawImage(n.sprite, x - G / 2, y - G / 2, G, G);
+          ctx.globalCompositeOperation = 'source-over';
+          ctx.globalAlpha = fog * (dormant ? 0.45 : 1);
+          ctx.drawImage(n.bodySprite, x - D, y - D, D * 2, D * 2);
+          ctx.globalAlpha = 1;
+          continue;
+        }
         ctx.globalAlpha = fog * (dormant ? 0.18 : n.badge ? 0.45 : 0.9);
         const G = R * (n.badge ? 4.2 : 6.5) * pulse;
         ctx.drawImage(n.sprite, x - G / 2, y - G / 2, G, G);
@@ -376,6 +391,7 @@
       ctx.textBaseline = 'top';
       const placed = [];
       const candidates = order.filter((n) => {
+        if (onShell(n)) return n === state.hovered || n === state.selected; // sphere dots stay quiet until pointed at
         const important = n.type in RANK;
         const inFocus = focus && focus.has(n.id);
         if (focus && !inFocus && !important) return false;
@@ -393,14 +409,14 @@
       const discs = [];
       for (const m of order) {
         if (!m.p || m.p.s <= 0) continue;
-        const r = m.r * m.p.s * (m.badge ? 1.25 : 1);
+        const r = onShell(m) ? SHELL_R * m.p.s : m.r * m.p.s * (m.badge ? 1.25 : 1);
         if (r >= 2.5) discs.push({ n: m, x0: m.p.x - r, y0: m.p.y - r, x1: m.p.x + r, y1: m.p.y + r });
       }
       const hit = (box, b) => box.x0 < b.x1 && box.x1 > b.x0 && box.y0 < b.y1 && box.y1 > b.y0;
       for (const n of candidates) {
         const important = n.type in RANK;
         const inFocus = focus && focus.has(n.id);
-        const R = n.r * n.p.s;
+        const R = bodyR(n) * n.p.s;
         const fog = fogAt(n.p.depth) * (focus && !inFocus ? 0.35 : 1);
         if (fog < 0.15) continue;
         const text = important ? n.label.toUpperCase() : n.label;
@@ -456,7 +472,7 @@
     function drawReticles(t) {
       const sel = state.selected, hov = state.hovered;
       if (hov && hov !== sel && hov.p.visible) {
-        const R = Math.max(10, hov.r * hov.p.s * 1.6);
+        const R = Math.max(10, bodyR(hov) * hov.p.s * 1.6);
         ctx.lineWidth = 1;
         bracket(hov.p.x, hov.p.y, R + 4, 6, rgba(hov.rgb, 0.9));
         // leader line to the tooltip
@@ -470,7 +486,7 @@
         }
       }
       if (sel && sel.p.visible && sel.visibleNow) {
-        const R = Math.max(14, sel.r * sel.p.s * 1.9) + 8;
+        const R = Math.max(14, bodyR(sel) * sel.p.s * 1.9) + 8;
         const spin = state.reduceMotion ? 0 : t * 0.9;
         ctx.lineWidth = 1.5;
         ctx.strokeStyle = rgba(sel.rgb, 0.95);
@@ -523,10 +539,11 @@
       let best = null, bestScore = Infinity;
       for (const n of state.nodes) {
         if (!n.visibleNow || !n.p.visible) continue;
-        const R = Math.max(9, n.r * n.p.s * (n.badge ? 1.4 : 1.6));
+        const br = bodyR(n), badge = n.badge && !onShell(n);
+        const R = Math.max(9, br * n.p.s * (badge ? 1.4 : 1.6));
         const d = Math.hypot(n.p.x - mx, n.p.y - my);
         if (d > R) continue;
-        const inside = d <= Math.max(5, n.r * n.p.s); // cursor is on the visible body
+        const inside = d <= Math.max(5, br * n.p.s); // cursor is on the visible body
         const score = inside ? n.p.depth / 1e6 : 1 + d / R; // bodies first (front-most wins), then nearest halo
         if (score < bestScore) { best = n; bestScore = score; }
       }

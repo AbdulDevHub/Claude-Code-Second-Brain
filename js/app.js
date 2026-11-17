@@ -103,7 +103,7 @@ function startSecondBrain(isDemo) {
 
   const cam = new OrbitCamera();
   const state = {
-    nodes, links, cam, reduceMotion, radius: 60, motion: 1, flat: false, structured: true, linkScale: 0.3, captions: [],
+    nodes, links, cam, reduceMotion, radius: 60, motion: 1, flat: false, structured: true, linkScale: 0.3, captions: [], shell: null,
     layout: null, selected: null, hovered: null, highlight: null, searchHits: null, tooltipAt: null,
     focusSet() {
       const f = this.hovered || this.selected;
@@ -167,6 +167,7 @@ function startSecondBrain(isDemo) {
     const res = Layouts.build(name, layoutCtx, DUST_COUNT);
     extent = res.extent;
     state.captions = res.captions;
+    state.shell = res.shell; // orb: ids drawn as plain sphere dots, labelled only on hover
     state.structured = !Layouts.PHYSICS.has(name);
     state.flat = Layouts.FLAT.has(name);
     state.linkScale = state.structured ? 0.14 : 1;
