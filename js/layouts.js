@@ -124,9 +124,9 @@
   const runOf = (ctx, kind) => ctx.branches.filter((b) => b.kind === kind).flatMap((b) => (b.hub ? [b.hub, ...b.items] : b.items));
 
   // ---------- 3D: orb ----------
-  // Knowledge on a dotted sphere, instructions in a white cluster at the center, skills as beads on a tilted
-  // orbit ring and apps (mods, MCP servers, agents) as hex badges on a wider ring.
-  const TA = 0, TB = 0.08; // ring tilts; the camera pitch shows them as ellipses
+  // Knowledge, skills and hooks as islands on a dotted sphere, instructions in a white cluster at the center, and
+  // apps (mods, MCP servers, agents) as hex badges on one orbit ring.
+  const TB = 0.08; // ring tilts; the camera pitch shows them as ellipses
   function orb(ctx, rand, d, out) {
     const { R, core, sections, branches, palette } = ctx;
     const v = [0, 0, 0];
@@ -136,8 +136,8 @@
     // Each inner branch becomes tidy "islands" on the shell inside its sector: loose items in one sunflower patch,
     // every sub-folder in its own patch with the folder node at the patch center.
     const onShell = (n, lat, lon) => at(n, R * Math.cos(lat) * Math.cos(lon), -R * Math.sin(lat), R * Math.cos(lat) * Math.sin(lon));
-    // Skills, hooks and apps live on the rings, so the shell is shared out among the inner branches only.
-    const inner = branches.filter((x) => x.kind === 'inner');
+    // Apps live on the ring; everything else (knowledge, skills, hooks) shares out the shell.
+    const inner = branches.filter((x) => x.kind !== 'app');
     if (inner.length) ctx.sectorize(inner);
     inner.forEach((b, bi) => {
       const am = (b.a0 + b.a1) / 2, span = b.a1 - b.a0, pad = Math.min(0.1, span * 0.1);
@@ -155,21 +155,21 @@
       if (!groups.length) return;
       // Pick the patch scale and number of rows so the patches fit the sector without crowding.
       const avail = Math.max(0.2, span - 2 * pad);
-      let rows, c = 0.055, lanes;
+      let rows, c = 0.085, lanes;
       for (rows = groups.length >= 4 ? 2 : 1; rows <= 3; rows++) {
         lanes = Array.from({ length: rows }, () => ({ g: [], w: 0 }));
         for (const g of groups) {
           const lane = lanes.reduce((m, l) => (l.w < m.w ? l : m));
           lane.g.push(g); lane.w += 2 * Math.sqrt(g.length) + 1.6;
         }
-        c = Math.min(0.055, avail / Math.max(...lanes.map((l) => l.w)));
-        if (c >= 0.036) break;
+        c = Math.min(0.085, avail / Math.max(...lanes.map((l) => l.w)));
+        if (c >= 0.05) break;
       }
       rows = lanes.length;
       const tall = Math.max(...groups.map((g) => Math.sqrt(g.length)));
-      const rowGap = Math.min(0.5, c * (2 * tall + 1.6));
+      const rowGap = Math.min(0.62, c * (2 * tall + 1.6));
       lanes.forEach((lane, r) => {
-        const tilt = rows === 1 ? (bi % 2 ? -0.32 : 0.32) : 0; // lone rows sit off the equator, clear of the bead ring
+        const tilt = rows === 1 ? (bi % 2 ? -0.42 : 0.42) : 0; // lone rows sit off the equator, clear of the bead ring
         const lat0 = (r - (rows - 1) / 2) * rowGap + tilt, cl = Math.cos(lat0);
         let lon = am - (lane.w * c) / cl / 2;
         for (const g of lane.g) {
@@ -197,13 +197,12 @@
         pos += 1;
       });
     };
-    ring(runOf(ctx, 'bead'), R * 1.34, TA);
-    ring(runOf(ctx, 'app'), R * 1.6, TB);
-    out.extent = { w: R * 1.62 + 24, h: R * 1.22 };
+    ring(runOf(ctx, 'app'), R * 1.42, TB);
+    out.extent = { w: R * 1.44 + 24, h: R * 1.18 };
 
     // dust: latitude rows on the shell, colored by sector
     const all = inner.length ? inner : branches;
-    const ci = all.map((b) => ctx.colorIndex(b.color));    const shell = budget(d, 0.58), rows = 44;
+    const ci = all.map((b) => ctx.colorIndex(b.color));    const shell = budget(d, 0.7), rows = 44;
     const per = (shell * Math.PI) / (2 * rows);
     for (let k = 0; k < rows; k++) {
       const th = ((k + 0.5) / rows) * Math.PI, m = Math.max(3, Math.round(per * Math.sin(th)));
@@ -222,16 +221,11 @@
       const r = Math.abs(gauss(rand)) * R * 0.1 + R * 0.02, y = rand() * 2 - 1, q = Math.sqrt(1 - y * y), lon = rand() * TAU;
       put(d, r * q * Math.cos(lon), r * y, r * q * Math.sin(lon), 0, rand() < 0.3 ? 3 : 2);
     }
-    const ringIdx = palette.indexOf(RING), blueIdx = palette.indexOf(BLUE);
-    for (let i = budget(d, 0.14); i > 0; i--) { // glowing bead ring
-      const a = rand() * TAU, r = R * 1.34 + gauss(rand) * 5;
-      tiltX(Math.cos(a) * r, gauss(rand) * 2.5, Math.sin(a) * r, TA, v);
-      put(d, v[0], v[1], v[2], ringIdx, rand() < 0.3 ? 2 : 1);
-    }
-    for (let i = budget(d, 0.05); i > 0; i--) { // faint outer app ring
-      const a = rand() * TAU, r = R * 1.6 + gauss(rand) * 3;
-      tiltX(Math.cos(a) * r, 0, Math.sin(a) * r, TB, v);
-      put(d, v[0], v[1], v[2], blueIdx, 0);
+    const blueIdx = palette.indexOf(BLUE);
+    for (let i = budget(d, 0.08); i > 0; i--) { // app ring
+      const a = rand() * TAU, r = R * 1.42 + gauss(rand) * 3.5;
+      tiltX(Math.cos(a) * r, gauss(rand) * 1.5, Math.sin(a) * r, TB, v);
+      put(d, v[0], v[1], v[2], blueIdx, rand() < 0.2 ? 1 : 0);
     }
     out.haze = (rand2) => { // leftovers land on the shell
       const y = rand2() * 2 - 1, q = Math.sqrt(1 - y * y), lon = rand2() * TAU;
