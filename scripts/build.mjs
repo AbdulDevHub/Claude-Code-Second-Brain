@@ -14,10 +14,11 @@ import { read, readJson, objectOr } from './lib/text.mjs';
 import { createRedactor } from './lib/redact.mjs';
 import { BrainGraph } from './lib/graph.mjs';
 import { scanAll } from './lib/sources.mjs';
+import { checkHealth } from './lib/health.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-export function build({ home = homedir(), omitBodies = false, extraRedactions = [] } = {}) {
+export function build({ home = homedir(), omitBodies = false, extraRedactions = [], now = Date.now() } = {}) {
   const started = performance.now();
   const claude = join(home, '.claude');
   if (!existsSync(claude)) throw new Error(`No Claude folder at ${claude}`);
@@ -29,6 +30,7 @@ export function build({ home = homedir(), omitBodies = false, extraRedactions = 
   const nodes = [...graph.nodes.values()];
   const of = (type) => nodes.filter((n) => n.type === type);
   const tally = (type) => ({ total: of(type).length, active: of(type).filter((n) => n.active !== false).length });
+  const health = checkHealth(graph, now);
   const stats = {
     memories: of('memory').length,
     notes: of('note').filter((n) => n.id !== 'note:index').length,
@@ -36,9 +38,10 @@ export function build({ home = homedir(), omitBodies = false, extraRedactions = 
     agents: of('agent').length, projects: of('project').length,
     connections: graph.links.length, files: nodes.filter((n) => n.file).length,
     bytes: nodes.reduce((sum, n) => sum + n.size, 0),
+    health: health.summary,
     public: omitBodies, builtAt: Date.now(), buildMs: Math.round(performance.now() - started),
   };
-  const json = JSON.stringify(graph.toJSON(stats));
+  const json = JSON.stringify(graph.toJSON(stats, health.items));
   const leak = findLeak(json);
   if (leak) throw new Error(`Refusing to write: personal info survived redaction ("${leak}")`);
   return { json, stats, nodeCount: nodes.length };
@@ -73,6 +76,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     console.log(`  ${nodeCount} nodes · ${stats.connections} connections`);
     console.log(`  ${stats.memories} memories · ${stats.notes} notes · ${stats.agents} agents`);
     console.log(`  skills ${pair(stats.skills)} · mods ${pair(stats.mods)} · mcp ${pair(stats.mcp)}`);
+    console.log(`  health ${stats.health.clean}/${stats.health.checked} clean`);
     console.log(`  -> ${out}`);
   } catch (err) {
     console.error(`Build failed: ${err.message}`);

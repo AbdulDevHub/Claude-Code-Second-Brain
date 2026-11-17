@@ -8,7 +8,8 @@ Read before adding or moving any on-screen element. Update when a layout rule or
 - Bottom right: zoom group (−, Fit, +). Nothing else sits permanently on the canvas.
 - Secondary info (telemetry, channels, activity, event log, runtime) belongs in the left Menu drawer, not floating panels.
 - The data sheet slides in from the right (`--panel-w` 470px). `body.panel-open` shifts the top bar, zoom and decks out of its way.
-- Decks (Skills, Applications) overlay the dimmed canvas below the header. The canvas gets `pointer-events: none` while a deck is open.
+- The data sheet header carries small copy pills (skill `/command`, tool name, file path). Each shows "Copied" for about 1.4 s.
+- Decks (Skills, Applications, Health) overlay the dimmed canvas below the header. The canvas gets `pointer-events: none` while a deck is open.
 
 ## Interaction
 - Click-first: pills and tabs toggle state, and every action is reachable by pointer. No keyboard-shortcut labels (Escape still closes things).

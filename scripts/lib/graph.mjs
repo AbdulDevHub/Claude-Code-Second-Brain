@@ -1,6 +1,7 @@
 // In-memory knowledge graph: nodes, de-duplicated links, and cross-link resolution
 // ([[wikilinks]], relative markdown links and name mentions between documents).
 import { resolve } from 'node:path';
+import { existsSync } from 'node:fs';
 import { escapeRegExp } from './text.mjs';
 
 const MAX_BODY = 20000;
@@ -21,6 +22,8 @@ export class BrainGraph {
     this.bySlug = new Map();
     this.byPath = new Map();
     this.documents = new Map(); // id -> { text, dir } for link resolution
+    this.unresolved = []; // { source, target } for [[wikilinks]] and .md links that point nowhere
+    this.refs = []; // every resolved [[wikilink]] / .md link, even when de-duplicated against a structure link
   }
 
   /** Adds a node; every string field is redacted. Returns the final id (suffixed on collision). */
@@ -56,9 +59,23 @@ export class BrainGraph {
   }
 
   resolveCrossLinks() {
-    for (const [id, { text, dir }] of this.documents) {
-      for (const m of text.matchAll(/\[\[([^\]|#]+)/g)) this.link(id, this.bySlug.get(m[1].trim().toLowerCase()), 'wikilink');
-      if (dir) for (const m of text.matchAll(/\]\(([^)#\s]+\.md)\)/g)) this.link(id, this.byPath.get(resolve(dir, m[1]).toLowerCase()), 'link');
+    const seen = new Set();
+    const miss = (source, target) => {
+      const key = `${source}|${target.toLowerCase()}`;
+      if (!seen.has(key)) { seen.add(key); this.unresolved.push({ source, target: this.redact(target) }); }
+    };
+    for (const [id, doc] of this.documents) {
+      const { dir } = doc;
+      const text = stripCode(doc.text); // `[[example]]` in code is documentation, not a link
+      for (const m of text.matchAll(/\[\[([^\]|#\n]{1,80})(?:[|#][^\]\n]*)?\]\]/g)) {
+        const slug = m[1].trim(), hit = this.bySlug.get(slug.toLowerCase());
+        if (hit) { this.refs.push({ source: id, target: hit }); this.link(id, hit, 'wikilink'); } else if (slug) miss(id, slug);
+      }
+      if (dir) for (const m of text.matchAll(/\]\(([^)#\s]+\.md)\)/g)) {
+        const hit = this.byPath.get(resolve(dir, m[1]).toLowerCase());
+        // Only files that are really missing count; links to project files outside ~/.claude are fine.
+        if (hit) { this.refs.push({ source: id, target: hit }); this.link(id, hit, 'link'); } else if (!/^[a-z]{2,}:/i.test(m[1]) && !existsSync(resolve(dir, m[1]))) miss(id, m[1]);
+      }
     }
     const targets = [...this.nodes.values()].filter((n) => MENTIONABLE.has(n.type)).map((n) => ({ id: n.id, re: mentionPattern(n) }));
     for (const [id, { text }] of this.documents) {
@@ -67,10 +84,15 @@ export class BrainGraph {
     }
   }
 
-  toJSON(stats) {
-    return { nodes: [...this.nodes.values()], links: this.links, stats };
+  toJSON(stats, health = []) {
+    return { nodes: [...this.nodes.values()], links: this.links, stats, health };
   }
 }
+
+export const stripCode = (text) => text
+  .replace(/^(```|~~~)[^\n]*\n[\s\S]*?(^\1[^\n]*$|(?![\s\S]))/gm, ' ') // fenced blocks
+  .replace(/^(?: {4}|\t).*$/gm, ' ') // indented code
+  .replace(/`[^`\n]*`/g, ' ');
 
 /**
  * Distinctive names (with a hyphen, digit or space) match anywhere as whole words.

@@ -220,6 +220,19 @@ body.panel-open .deck { left: calc((100vw - var(--panel-w) - 44px) / 2); width: 
 .card.parked .ico { border-style: dashed; box-shadow: none; }
 .card.parked .cmeta b { color: var(--amber); }
 .deck .empty { color: var(--muted); padding: 20px; }
+.health-group .fix { margin: -4px 0 10px; font: 400 12.5px/1.45 var(--ui); color: var(--muted); }
+.health-group.warn h3 span { color: var(--amber); }
+.health-group .card { grid-template-areas: "ico name" "ico cmeta" "desc desc"; }
+
+.copy-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.copy {
+  padding: 5px 11px; border: 1px solid var(--line); border-radius: 999px; background: rgba(255, 255, 255, 0.03);
+  color: var(--muted); font: 500 11px var(--mono); letter-spacing: 0.04em; cursor: pointer; transition: color 0.2s, border-color 0.2s;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.copy:hover { color: var(--text); border-color: color-mix(in srgb, var(--c) 60%, transparent); }
+.copy.done { color: #5dff9b; border-color: rgba(93, 255, 155, 0.45); }
+.copy.fail { color: var(--amber); }
 
 .app-group { margin-bottom: 22px; }
 .app-group h3 { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; font: 600 11px var(--ui); letter-spacing: 0.28em; color: #d9cec6; }
@@ -395,7 +408,7 @@ body.panel-open .deck { left: calc((100vw - var(--panel-w) - 44px) / 2); width: 
   .motion input[type=range] { width: 64px; }
   .nav-row .tabs { order: 1; width: 100%; overflow-x: auto; scrollbar-width: none; }
   .nav-row .tabs::-webkit-scrollbar { display: none; }
-  .tabs .tab { padding: 0 10px; font-size: 12.5px; }
+  .tabs .tab { flex: 1 0 auto; padding: 0 7px; font-size: 12px; }
   #recenter { order: 3; margin-left: auto; }
   .search { width: 100%; }
   .subtabs { align-self: stretch; }
@@ -419,6 +432,9 @@ body.panel-open .deck { left: calc((100vw - var(--panel-w) - 44px) / 2); width: 
   .modal .module { padding: 22px 18px; }
 }
 
+@media (max-width: 380px) {
+  .tabs .tab { padding: 0 4px; font-size: 11.5px; }
+}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition-duration: 0.01ms !important; }
 }

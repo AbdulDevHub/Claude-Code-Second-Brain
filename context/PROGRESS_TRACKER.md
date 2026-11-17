@@ -9,7 +9,8 @@ When old log entries stop being useful, fold them into the "Earlier history" par
 - v2 look (warm orange on black, after the `V2 Upgrade/` reference): tabs for 3D orbs (Orb, Neural), 2D map (Force, Circle, Hex, Rings), Timeline, Skills deck and Applications deck.
 - Decorative dust (6,500 points on desktop, 4,000 on phones) morphs between layouts. Tools are drawn as hex badges or bead badges with line icons.
 - Old HUD panels (telemetry, channels, activity, event log, runtime) live in the Menu drawer. The last view is saved in localStorage.
-- 25 tests pass (`npm test`). README screenshots were refreshed for v2.
+- Health deck (tab) and a HEALTH telemetry row: build-time checks for unindexed memories, broken links, missing descriptions, stale (120+ days), plus info-only orphans and parked tools. Copy buttons in the data sheet.
+- 30 tests pass (`npm test`). README screenshots were refreshed for v2.
 
 ## In progress
 - Nothing active.
@@ -22,6 +23,11 @@ When old log entries stop being useful, fold them into the "Earlier history" par
 - Publish: create the public GitHub repo, enable Pages (main, root), set the About description, topics and social preview image.
 
 ## Session log
+### 2026-11-17 — health checks and copy buttons
+- Decided against renaming to "Agentic OS": the app only views `~/.claude` and can't run anything. The name stays, and it stays static and read-only.
+- Added `scripts/lib/health.mjs`. `graph.mjs` now records `unresolved` and `refs`, and skips `[[links]]` inside code. Added a Health deck, a HEALTH telemetry row and copy pills, plus the demo fixture `offline-mode.md` (untidy on purpose) and `test/health.test.mjs`.
+- Routines tab is still skipped: there's no local scheduled-task data.
+
 ### 2026-11-06 — social preview image
 - Added a 1200×630 share card `docs/og-image.png` (brand, headline, orb crop from `screenshots/hero.png`); its source is `docs/og-template.html`. `og:image`/`twitter:image` now point to it.
 - Still to do by hand: upload it as the GitHub repo's social preview (Settings → General).

@@ -38,7 +38,18 @@ function startSecondBrain(isDemo) {
     { key: 'timeline', label: 'Timeline', title: 'TIMELINE', layout: 'timeline' },
     { key: 'skills', label: 'Skills', title: 'SKILLS DECK', deck: true },
     { key: 'apps', label: 'Applications', title: 'APPLICATIONS', deck: true },
+    { key: 'health', label: 'Health', title: 'HEALTH CHECK', deck: true },
   ];
+  // Mirrors HEALTH_KINDS in scripts/lib/health.mjs, plus a plain-language fix for each.
+  const HEALTH_KINDS = [
+    ['unindexed', 'NOT IN THE MEMORY INDEX', 'warn', 'Add a line for it to that project\'s MEMORY.md, or delete the file.'],
+    ['missing-link', 'LINKS TO NOTHING', 'warn', 'Write the missing memory or note, or fix the link.'],
+    ['no-description', 'NO DESCRIPTION', 'warn', 'Add a description: line so Claude knows when it applies.'],
+    ['orphan', 'NOT LINKED', 'info', 'Link it to related memories or notes with [[name]].'],
+    ['stale', 'NOT TOUCHED LATELY', 'warn', 'Check it is still true, then update or delete it.'],
+    ['parked', 'PARKED', 'info', 'Switched off in Toolbox. Fine if that was on purpose.'],
+  ];
+  const HEALTH = Array.isArray(BRAIN.health) ? BRAIN.health : [];
   const BASE_R = { core: 22, hub: 9.5, project: 8, group: 9, section: 5, memory: 5.5, note: 5.5, skill: 9, mod: 12, agent: 12, mcp: 12, reference: 5.5 };
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const isPhone = () => window.innerWidth <= 900;
@@ -189,6 +200,12 @@ function startSecondBrain(isDemo) {
     subtabsEl.hidden = !view.subs;
     const sub = view.subs && view.subs.find((s) => s[0] === prefs.sub[view.key]);
     $('#view-name').textContent = view.title + (sub ? ` · ${sub[1].toUpperCase()}` : '');
+    // On narrow phones the tab row scrolls sideways; keep the active tab in sight.
+    const on = tabsEl.querySelector('.tab.on');
+    if (on && tabsEl.scrollWidth > tabsEl.clientWidth) {
+      const a = tabsEl.getBoundingClientRect(), b = on.getBoundingClientRect();
+      tabsEl.scrollLeft += b.left - a.left - (a.width - b.width) / 2;
+    }
   }
   tabsEl.addEventListener('click', (e) => { const b = e.target.closest('[data-view]'); if (b) setView(b.dataset.view); });
   subtabsEl.addEventListener('click', (e) => { const b = e.target.closest('[data-sub]'); if (b) setView(view.key, b.dataset.sub); });
@@ -204,7 +221,39 @@ function startSecondBrain(isDemo) {
     document.body.classList.toggle('deck-open', !!view.deck);
     deck.hidden = !view.deck;
     if (!view.deck) { deck.innerHTML = ''; return; }
-    deck.innerHTML = view.key === 'skills' ? skillsDeck() : appsDeck();
+    deck.innerHTML = view.key === 'skills' ? skillsDeck() : view.key === 'health' ? healthDeck() : appsDeck();
+  }
+  function healthDeck() {
+    const sum = BRAIN.stats && BRAIN.stats.health;
+    if (!sum) return '<div class="empty">No health data. Rebuild with <code>npm run build</code>.</div>';
+    const toTidy = sum.flagged ?? sum.checked - sum.clean; // distinct files, not individual issues
+    const parked = HEALTH.filter((h) => h.kind === 'parked').length;
+    const groups = HEALTH_KINDS.map(([kind, title, level, fix]) => {
+      const list = HEALTH.filter((h) => h.kind === kind && byId.has(h.id));
+      if (!list.length) return '';
+      return `
+        <section class="app-group health-group ${level}">
+          <h3>${title} <span>${list.length}</span></h3>
+          <p class="fix">${esc(fix)}</p>
+          <div class="cards">${list.map((h) => {
+            const n = byId.get(h.id);
+            return `
+            <button class="card ${level === 'info' ? 'parked' : ''}" data-id="${esc(n.id)}" style="--c:${n.color}">
+              <span class="ico">${icon(n)}</span>
+              <span class="name">${esc(n.label)}</span>
+              <span class="cmeta">${esc(TYPE_NAMES[n.type] || n.type).toUpperCase()}${n.project ? ` · ${esc(n.project).toUpperCase()}` : ''}</span>
+              <span class="desc">${esc(h.detail)}</span>
+            </button>`;
+          }).join('')}
+          </div>
+        </section>`;
+    }).join('');
+    return `
+      <div class="deck-head">
+        <div><div class="eyebrow">HEALTH CHECK · WHAT TO TIDY IN ~/.CLAUDE</div>
+        <h2>${sum.clean}/${sum.checked} clean <small>${toTidy ? `${toTidy} file${toTidy === 1 ? '' : 's'} to tidy` : 'Everything is tidy'} · ${parked} parked</small></h2></div>
+      </div>
+      ${groups || '<div class="empty">Nothing to report.</div>'}`;
   }
   function skillsDeck() {
     const skills = nodes.filter((n) => n.type === 'skill');
@@ -390,6 +439,28 @@ function startSecondBrain(isDemo) {
     if (target) { e.preventDefault(); select(target); }
   });
 
+  // Copy buttons in the sheet header. The Clipboard API can be missing on file:// in some browsers, so fall back to execCommand.
+  async function copyText(text) {
+    try { await navigator.clipboard.writeText(text); return true; } catch { /* fall through */ }
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
+    document.body.appendChild(ta); ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch { /* unsupported */ }
+    ta.remove();
+    return ok;
+  }
+  panelHead.addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-copy]');
+    if (!b || b.dataset.busy) return;
+    const label = b.textContent;
+    b.dataset.busy = '1';
+    const ok = await copyText(b.dataset.copy);
+    b.textContent = ok ? 'Copied' : 'Copy failed';
+    b.classList.add(ok ? 'done' : 'fail');
+    setTimeout(() => { b.textContent = label; b.classList.remove('done', 'fail'); delete b.dataset.busy; }, 1400);
+  });
+
   function select(n) {
     if (!n) return;
     if (!n.visibleNow) { for (const f of FILTERS) if (f.dormant ? n.active === false : f.types.includes(n.channel)) hidden.delete(f.key); refreshVisibility(); renderFilters(); }
@@ -418,10 +489,16 @@ function startSecondBrain(isDemo) {
       ['SYNAPSES', String(n.degree)],
     ].filter(Boolean);
 
+    const copies = [
+      n.type === 'skill' ? ['Copy /' + n.label, '/' + n.label] : null,
+      ['agent', 'mcp', 'mod'].includes(n.type) ? ['Copy name', n.label] : null,
+      n.file ? ['Copy path', n.file] : null,
+    ].filter(Boolean);
     panelHead.innerHTML = `
       <div class="sheet-id">NODE ${hash(n.id)} <span>// DATA SHEET</span></div>
       <h2 id="sheet-title"></h2>
-      ${n.desc ? `<p class="desc">${esc(n.desc)}</p>` : ''}`;
+      ${n.desc ? `<p class="desc">${esc(n.desc)}</p>` : ''}
+      ${copies.length ? `<div class="copy-row">${copies.map(([l, v]) => `<button class="copy" data-copy="${esc(v)}">${esc(l)}</button>`).join('')}</div>` : ''}`;
     scramble($('#sheet-title'), n.label);
 
     const body = n.body && window.marked && window.DOMPurify
@@ -470,12 +547,14 @@ function startSecondBrain(isDemo) {
   const STAT_ITEMS = [
     ['MEMORIES', pair(S.memories), COLORS.memory], ['NOTES', pair(S.notes), COLORS.note], ['SKILLS', pair(S.skills), COLORS.skill],
     ['MODS', pair(S.mods), COLORS.mod], ['MCP', pair(S.mcp), COLORS.mcp], ['AGENTS', pair(S.agents), COLORS.agent],
-    ['SYNAPSES', pair(S.connections), COLORS.hub],
-  ];
-  const statMax = Math.max(...STAT_ITEMS.slice(0, -1).map((s) => s[1].total), 1);
-  $('#stats').innerHTML = STAT_ITEMS.map(([k, v, c], i) => {
+    ['SYNAPSES', pair(S.connections), COLORS.hub, true],
+    S.health ? ['HEALTH', { active: S.health.clean, total: S.health.checked }, '#5dff9b', true] : null,
+  ].filter(Boolean);
+  // Items flagged `own` fill their bar against their own total instead of the shared max.
+  const statMax = Math.max(...STAT_ITEMS.filter((s) => !s[3]).map((s) => s[1].total), 1);
+  $('#stats').innerHTML = STAT_ITEMS.map(([k, v, c, own]) => {
     const split = v.active !== v.total;
-    const scale = i === STAT_ITEMS.length - 1 ? 100 / Math.max(1, v.total) : 100 / statMax;
+    const scale = own ? 100 / Math.max(1, v.total) : 100 / statMax;
     return `
     <div class="stat" style="--c:${c}">
       <span class="k">${k}</span>

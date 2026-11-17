@@ -14,6 +14,7 @@ Claude Code remembers you through plain files in `~/.claude`: your `CLAUDE.md`, 
 
 - **Every node is a real file**, and every line is a real link between files (`[[wikilinks]]`, references, tool mentions). Click one to read it.
 - **Seven views of one brain:** a dotted 3D orb, a 3D force graph, 2D rings, hex, circle and force maps, and a timeline, with thousands of particles morphing between them.
+- **A health check for your setup:** it flags memories missing from `MEMORY.md` (so Claude never loads them), broken `[[links]]`, missing descriptions, unlinked or stale notes, and parked tools.
 - **Private by default:** a local build script scans and scrubs your files, and refuses to write output if anything personal survives.
 - **Built from scratch:** hand-written layouts, 3D physics, camera and Canvas 2D renderer. No graph library, no WebGL, no npm dependencies. It opens straight from disk.
 
@@ -52,6 +53,7 @@ Claude Code remembers you through plain files in `~/.claude`: your `CLAUDE.md`, 
 | **Timeline** | One lane per category, placed by last-modified date. Recent weeks get more room than old months. |
 | **Skills** | A deck of every skill ranked by size, with its rough token cost and active/parked state. |
 | **Applications** | MCP servers, mods and agents as hex tiles. |
+| **Health** | What to tidy in `~/.claude`, grouped by problem, with a one-line fix for each group. Click a card to open the file. |
 
 The chrome stays minimal: tab pills, search, a Motion toggle with a speed slider, and zoom controls. **Menu** opens a drawer with telemetry, channels, the activity chart, the event log and the runtime readout.
 
@@ -62,7 +64,8 @@ The chrome stays minimal: tab pills, search, a Motion toggle with a speed slider
 ## Features
 
 - **Seven layouts, one cloud.** Every layout writes the same number of seeded dust particles, so switching views morphs one cloud into the next. Drag to orbit (pan in 2D), scroll or pinch to zoom, and drag nodes in the force layouts. Auto-orbit drifts when idle.
-- **Data sheets.** Every node opens its real contents (sanitized markdown), metadata and clickable connections. Links between brain files jump to that node.
+- **Data sheets.** Every node opens its real contents (sanitized markdown), metadata and clickable connections. Links between brain files jump to that node. Copy buttons grab a skill's `/command`, a tool's name or the file path.
+- **Health check.** Computed at build time, so public builds get it too: memories missing from their `MEMORY.md` index, `[[links]]` to files that don't exist (examples inside code are ignored), missing descriptions, notes with no links, files untouched for 120+ days, and parked tools.
 - **Parked tools.** Skills, mods and MCP servers switched off in Toolbox still appear with dashed rims, so the brain shows everything installed.
 - **Menu drawer.** Telemetry with active/total counts, channel filters, a 30-day activity chart (click a day to light up what changed), an event log and a runtime readout.
 - **Remembers your view.** The last tab and layout come back on the next visit.
@@ -86,12 +89,13 @@ The chrome stays minimal: tab pills, search, a Motion toggle with a speed slider
 | --- | --- |
 | [`scripts/lib/sources.mjs`](scripts/lib/sources.mjs) | One scanner per source (CLAUDE.md, memory, notes, skills, mods, plugins, agents, MCP, reference). It reads on/off state from the same places as the Toolbox mod. |
 | [`scripts/lib/graph.mjs`](scripts/lib/graph.mjs) | Node/link registry with de-duplication and cross-link resolution: `[[wikilinks]]`, relative `.md` links, and name mentions with context rules so plain words like "review" don't create false links. |
+| [`scripts/lib/health.mjs`](scripts/lib/health.mjs) | Read-only health checks over the finished graph (unindexed memories, broken links, missing descriptions, orphans, stale files, parked tools). |
 | [`scripts/lib/redact.mjs`](scripts/lib/redact.mjs) | Ordered scrub rules (emails, then home paths in Windows/Git Bash/POSIX forms, then encoded project folders, then whole-word usernames) plus the final leak check. |
 | [`js/layouts.js`](js/layouts.js) | Target positions for each structured layout (orb, circle, hex, rings, timeline), plus the seeded dust cloud and captions that go with it. Pure math, so the tests run it. |
 | [`js/glyphs.js`](js/glyphs.js) | Line icons for tool badges, picked from a tool's name with a per-type fallback. |
 | [`js/engine.js`](js/engine.js) | The d3-force model rebuilt for 3D (with a flat mode for the 2D force map): many-body repulsion, Hooke springs with degree bias, gravity, soft collisions and alpha cooling. Also an orbit camera where every property eases toward a goal. |
 | [`js/renderer.js`](js/renderer.js) | Starfield, the dust cloud (morphed point by point and batched by color and brightness), synapses with travelling pulses, glowing knowledge nodes, hex and bead badges, and the sparkle core. Glows, badges and icons are pre-rendered once and stamped with additive blending. Labels are placed greedily with overlap culling. |
-| [`js/app.js`](js/app.js) | HUD wiring: views and layouts, pointer and touch input, data sheet, skills and apps decks, menu drawer, filters, search, activity chart, boot sequence. |
+| [`js/app.js`](js/app.js) | HUD wiring: views and layouts, pointer and touch input, data sheet with copy buttons, skills, apps and health decks, menu drawer, filters, search, activity chart, boot sequence. |
 
 **Performance notes.** Nodes and links are created with one fixed shape so V8 keeps property access monomorphic, which made the physics loop about 7x faster. Sprites replace per-frame gradients, stars and dust are batched by color and brightness into a few dozen fills per frame, and the HUD skips `backdrop-filter`, since a blur over a live canvas halves the frame rate.
 
@@ -103,7 +107,7 @@ Requires Node 18.3+. There are no dependencies to install.
 npm run build:demo   # optional: rebuild the bundled demo brain
 npm run build        # scan your own ~/.claude into data.js
 npm run open         # build, then open index.html in your browser
-npm test             # 25 tests: parser, redaction, MCP secrets, odd config files, graph, camera, physics, layouts
+npm test             # 30 tests: parser, redaction, MCP secrets, odd config files, graph, health, camera, physics, layouts
 ```
 
 `index.html` opens straight from disk. With no `data.js`, it falls back to the fictional demo brain in [`demo/`](demo/), so a fresh clone works right away.
