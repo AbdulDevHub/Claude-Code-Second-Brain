@@ -130,7 +130,7 @@ test('demo build: plugin dirs, marketplace plugins, synced skills and parked MCP
 test('hooks: one node per script, merged across events, commands never emitted', () => {
   const { json, stats, health } = (() => { const r = build({ home: DEMO_HOME }); return { ...r, health: JSON.parse(r.json).health }; })();
   const hooks = new Map(JSON.parse(json).nodes.filter((n) => n.type === 'hook').map((n) => [n.id, n]));
-  assert.deepEqual(stats.hooks, { total: 4, active: 4 });
+  assert.deepEqual(stats.hooks, { total: 5, active: 5 }); // 4 of yours + 1 from the Focus Mode mod
   assert.equal(hooks.get('hook:format-on-save').sub, 'PostToolUse · Stop');
   assert.equal(hooks.get('hook:block-force-push').file, '~/.claude/hooks/block-force-push.mjs');
   assert.match(hooks.get('hook:block-force-push').desc, /^PreToolUse guard/);
@@ -138,6 +138,36 @@ test('hooks: one node per script, merged across events, commands never emitted',
   assert.ok(hooks.has('hook:Notification inline'));
   assert.deepEqual(health.filter((h) => h.kind === 'missing-script').map((h) => h.id), ['hook:notify-done']);
   for (const s of ['demo-secret-token-123', 'hunter2', 'say-it', '--final']) assert.ok(!json.includes(s), `leaked ${s}`);
+});
+
+test('hooks from mods and projects are found, grouped by owner and linked to their mod', () => {
+  const { json } = build({ home: DEMO_HOME });
+  const { nodes, links } = JSON.parse(json);
+  const modHook = nodes.find((n) => n.id === 'hook:focus-mode/collapse-output');
+  assert.equal(modHook?.from, 'Focus Mode mod');
+  assert.equal(modHook.missing, false, '${CLAUDE_PLUGIN_ROOT} resolves to the mod folder');
+  assert.match(modHook.desc, /^Collapses long read/);
+  assert.ok(links.some((l) => l.source === 'mod:focus-mode' && l.target === modHook.id));
+  assert.ok(links.some((l) => l.source === 'group:hooks-mods' && l.target === modHook.id && l.kind === 'structure'));
+  assert.ok(!json.includes('demo-secret-token-123'));
+
+  // A project folder found through its session log, with hooks in .claude/settings.json.
+  const home = mkdtempSync(join(tmpdir(), 'brain-hooks-'));
+  const proj = join(home, 'Code', 'Shop');
+  const put = (p, text) => { mkdirSync(dirname(p), { recursive: true }); writeFileSync(p, text); };
+  put(join(home, '.claude', 'CLAUDE.md'), '# Me');
+  put(join(home, '.claude', 'projects', 'C--x-Code-Shop', 'abc.jsonl'), JSON.stringify({ type: 'user', cwd: proj }) + '\n');
+  put(join(proj, '.claude', 'settings.json'), JSON.stringify({ hooks: { Stop: [{ hooks: [{ type: 'command', command: 'bash "$CLAUDE_PROJECT_DIR"/.claude/hooks/ship.sh --token hunter2' }] }] } }));
+  put(join(proj, '.claude', 'hooks', 'ship.sh'), '# Ships it\n');
+  try {
+    const out = build({ home }).json;
+    const hook = JSON.parse(out).nodes.find((n) => n.type === 'hook');
+    assert.equal(hook.label, 'ship');
+    assert.match(hook.from, /project$/);
+    assert.equal(hook.missing, false, '$CLAUDE_PROJECT_DIR resolves to the project folder');
+    assert.equal(hook.file, undefined, 'paths outside ~/.claude are never emitted');
+    assert.ok(!out.includes('hunter2') && !out.includes('Shop/.claude'));
+  } finally { rmSync(home, { recursive: true, force: true }); }
 });
 
 test('hook script detection', () => {

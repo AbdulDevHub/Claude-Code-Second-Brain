@@ -3,7 +3,7 @@
 // The on/off sources match the Toolbox mod: skills-disabled/, CLAUDE_CODE_PLUGIN_DIRS,
 // settings.enabledPlugins, ~/.claude.json mcpServers and toolbox/parked-mcp.json.
 import { join, basename, dirname } from 'node:path';
-import { existsSync } from 'node:fs';
+import { existsSync, openSync, readSync, closeSync } from 'node:fs';
 import { read, readJson, objectOr, ls, isDir, mtime, titleCase, firstHeading, frontmatter, escapeRegExp } from './text.mjs';
 
 const NOT_MODS = new Set(['cache', 'data', 'marketplaces', 'store', 'synced']);
@@ -170,6 +170,7 @@ function scanMods(g, ctx) {
   // home folder (like the demo) still resolves. Trade-off: two plugin folders with the same name both count as on.
   const isOn = (dir, d) => onDirs.some((p) => p === normalizePath(dir) || p.endsWith(`/plugins/${d.toLowerCase()}`));
 
+  ctx.modRoots = []; // { id, root, label, slug, active } for scanHooks
   const local = ls(pluginsDir).filter((d) => !NOT_MODS.has(d) && existsSync(join(pluginsDir, d, '.claude-plugin', 'plugin.json')));
   if (local.length) {
     const group = addGroup(g, 'mod', 'mods-local', 'Local mods', 'Hand-built Claude Code mods');
@@ -189,6 +190,7 @@ function scanMods(g, ctx) {
       });
       g.link(group, id);
       g.register(id, { path: manifestPath, slugs: [name] });
+      ctx.modRoots.push({ id, root: dir, label: titleCase(name), slug: name, active: g.nodes.get(id).active });
     }
   }
 
@@ -209,6 +211,7 @@ function scanMods(g, ctx) {
       });
       g.link(group, id);
       g.register(id, { slugs: [name] });
+      if (root && isDir(root)) ctx.modRoots.push({ id, root, label: titleCase(name), slug: name, active: isOn === true });
     }
   }
 }
@@ -295,8 +298,15 @@ const SCRIPT_RE = /(?:"([^"]+\.(?:mjs|cjs|js|ts|ps1|py|sh|bat|cmd|exe))"|'([^']+
  * `path` is absolute (it may not exist), or null when it depends on an env var or the working
  * directory ($CLAUDE_PROJECT_DIR, ${CLAUDE_PLUGIN_ROOT}, ./x.sh), so it can't be checked from here.
  */
-export function hookScript(command, home) {
-  const cmd = String(command || '');
+export function hookScript(command, home, vars = {}) {
+  // Known roots (a mod's ${CLAUDE_PLUGIN_ROOT}, a project's $CLAUDE_PROJECT_DIR) are filled in first so their scripts can be checked.
+  let cmd = String(command || '');
+  for (const [k, v] of Object.entries(vars)) {
+    if (!v) continue;
+    const val = v.replace(/\\/g, '/'), ref = `(?:\\$\\{${k}\\}|\\$${k}\\b|%${k}%)`;
+    // "$VAR"/rest (the documented form) becomes one quoted path, so a value with spaces stays in one piece.
+    cmd = cmd.replace(new RegExp(`"${ref}"(/[^\\s"']*)`, 'g'), (_, rest) => `"${val}${rest}"`).replace(new RegExp(ref, 'g'), val);
+  }
   const m = cmd.match(SCRIPT_RE);
   if (!m) return null;
   const token = cmd.slice(0, m.index).split(/\s/).pop() + m[0]; // the whole word, including any $VAR prefix glued to it
@@ -326,24 +336,73 @@ function scriptSummary(text) {
   return text1.split(/(?<=\.)\s/)[0].slice(0, 200) || undefined;
 }
 
+/** Project folders Claude Code has worked in, read from the `cwd` near the top of each project's newest session log. */
+function projectFolders(ctx) {
+  const root = join(ctx.claude, 'projects'), out = new Map();
+  for (const key of ls(root)) {
+    const logs = ls(join(root, key)).filter((f) => f.endsWith('.jsonl')).map((f) => join(root, key, f));
+    if (!logs.length) continue;
+    const newest = logs.reduce((a, b) => (mtime(a) >= mtime(b) ? a : b));
+    let head = '';
+    try {
+      const fd = openSync(newest, 'r'), buf = Buffer.alloc(65536);
+      head = buf.subarray(0, readSync(fd, buf, 0, buf.length, 0)).toString('utf8');
+      closeSync(fd);
+    } catch { continue; }
+    const m = head.match(/"cwd":"((?:[^"\\]|\\.)*)"/);
+    if (!m) continue;
+    let dir; try { dir = JSON.parse(`"${m[1]}"`); } catch { continue; }
+    if (normalizePath(dir) === normalizePath(ctx.home) || !isDir(dir) || out.has(normalizePath(dir))) continue;
+    const shortKey = key.replace(new RegExp(`^[a-z]--Users-${escapeRegExp(ctx.userName)}(-|$)`, 'i'), '');
+    out.set(normalizePath(dir), { dir, label: projectLabel(shortKey), slug: shortKey });
+  }
+  return [...out.values()];
+}
+
+/** Every place hooks are registered: your settings.json, each mod's hooks/hooks.json, and each project's .claude/settings*.json. */
+function hookSources(ctx) {
+  const sources = [{ hooks: ctx.settings.hooks, origin: null, vars: {} }];
+  for (const mod of ctx.modRoots || []) {
+    const file = join(mod.root, 'hooks', 'hooks.json');
+    const hooks = existsSync(file) ? objectOr(readJson(file, null)).hooks : null; // local mods use { modules: [...] }, not command hooks
+    if (hooks) sources.push({ hooks, origin: { kind: 'mod', ...mod }, vars: { CLAUDE_PLUGIN_ROOT: mod.root } });
+  }
+  for (const p of projectFolders(ctx)) {
+    for (const f of ['settings.json', 'settings.local.json']) {
+      const hooks = objectOr(readJson(join(p.dir, '.claude', f), null)).hooks;
+      if (hooks) sources.push({ hooks, origin: { kind: 'project', id: null, label: p.label, slug: p.slug, active: true }, vars: { CLAUDE_PROJECT_DIR: p.dir } });
+    }
+  }
+  return sources;
+}
+
 function scanHooks(g, ctx) {
-  const hooks = objectOr(ctx.settings.hooks);
   const byName = new Map();
-  for (const [event, groups] of Object.entries(hooks)) {
-    if (!Array.isArray(groups)) continue;
-    for (const group of groups) {
-      for (const h of Array.isArray(group?.hooks) ? group.hooks : []) {
-        const script = h?.type === 'command' ? hookScript(h.command, ctx.home) : null;
-        const name = script ? script.name : `${event} ${h?.type === 'prompt' || h?.type === 'agent' ? h.type : 'inline'}`;
-        const key = script?.path ? script.path.toLowerCase() : name; // same script on several events = one node
-        if (!byName.has(key)) byName.set(key, { name, script, regs: [] });
-        byName.get(key).regs.push({ event, matcher: typeof group.matcher === 'string' && group.matcher ? group.matcher : '', timeout: h?.timeout, async: !!h?.async, type: h?.type || 'command' });
+  for (const { hooks, origin, vars } of hookSources(ctx)) {
+    for (const [event, groups] of Object.entries(objectOr(hooks))) {
+      if (!Array.isArray(groups)) continue;
+      for (const group of groups) {
+        for (const h of Array.isArray(group?.hooks) ? group.hooks : []) {
+          const script = h?.type === 'command' ? hookScript(h.command, ctx.home, vars) : null;
+          const name = script ? script.name : `${event} ${h?.type === 'prompt' || h?.type === 'agent' ? h.type : 'inline'}`;
+          // Same script on several events = one node. Inline hooks group per owner and event.
+          const key = `${origin ? `${origin.kind}:${origin.slug}` : 'you'}|${script?.path ? script.path.toLowerCase() : name}`;
+          if (!byName.has(key)) byName.set(key, { name, script, origin, regs: [] });
+          byName.get(key).regs.push({ event, matcher: typeof group.matcher === 'string' && group.matcher ? group.matcher : '', timeout: h?.timeout, async: !!h?.async, type: h?.type || 'command' });
+        }
       }
     }
   }
   const off = ctx.settings.disableAllHooks === true;
   const cell = (s) => String(s).replace(/\|/g, '\\|');
-  for (const { name, script, regs } of byName.values()) {
+  // With hooks from more than one place, group them by owner so the layouts keep them apart.
+  const kinds = new Set([...byName.values()].map((h) => h.origin?.kind || 'you'));
+  const groups = {};
+  if (kinds.size > 1) {
+    const spec = { you: ['hooks-yours', 'Your hooks', 'Registered in ~/.claude/settings.json'], mod: ['hooks-mods', 'Mod hooks', 'Shipped inside installed mods and plugins'], project: ['hooks-projects', 'Project hooks', 'Registered in a project\'s .claude/settings.json'] };
+    for (const k of kinds) groups[k] = addGroup(g, 'hook', ...spec[k]);
+  }
+  for (const { name, script, origin, regs } of byName.values()) {
     const path = script?.path;
     const exists = !!path && existsSync(path) && !isDir(path);
     const inClaude = exists && normalizePath(path).startsWith(normalizePath(ctx.claude) + '/');
@@ -351,14 +410,18 @@ function scanHooks(g, ctx) {
     const table = ['| Event | Matcher | Timeout | Async |', '| --- | --- | --- | --- |',
       ...regs.map((r) => `| ${r.event} | ${r.matcher ? `\`${cell(r.matcher)}\`` : 'all'} | ${r.timeout ? `${r.timeout}s` : 'default'} | ${r.async ? 'yes' : 'no'} |`)].join('\n');
     const summary = inClaude && /\.(mjs|cjs|js|ts|ps1|py|sh)$/i.test(path) ? scriptSummary(read(path)) : undefined;
-    const id = g.addNode(`hook:${name}`, {
-      label: name, type: 'hook', sub: events.join(' · '),
+    const from = origin ? (origin.kind === 'mod' ? `${origin.label} mod` : `${origin.label} project`) : undefined;
+    const where = script ? (exists ? '' : path ? '**Script not found.** ' : 'Its location depends on an environment variable or the working folder. ') + (inClaude || !path ? '' : 'Lives outside `~/.claude`. ') : 'An inline command, not a script file. ';
+    const id = g.addNode(`hook:${origin ? `${origin.slug}/` : ''}${name}`, {
+      label: name, type: 'hook', sub: events.join(' · '), from,
+      project: origin?.kind === 'project' ? origin.label : undefined,
       file: inClaude ? tilde(ctx, path) : undefined,
       desc: summary || (script ? `Runs ${script.name} on ${events.join(', ')}` : `Inline ${regs[0].type} on ${events.join(', ')}`),
-      body: `${table}\n\n${script ? (exists ? '' : path ? '**Script not found.** ' : 'Its location depends on an environment variable or the working folder. ') + (inClaude || !path ? '' : 'Lives outside `~/.claude`. ') : 'An inline command, not a script file. '}The command itself is never shown.`.trim(),
-      mtime: exists ? mtime(path) : undefined, active: !off, missing: script && path ? !exists : undefined,
+      body: `${table}\n\n${from ? `From the ${from}. ` : ''}${where}The command itself is never shown.`.trim(),
+      mtime: exists ? mtime(path) : undefined, active: !off && (origin ? origin.active !== false : true), missing: script && path ? !exists : undefined,
     });
-    g.link('hub:hook', id);
+    g.link(groups[origin?.kind || 'you'] || 'hub:hook', id);
+    if (origin?.id) g.link(origin.id, id, 'link'); // a mod's hooks connect to the mod
     g.register(id, { slugs: [name] });
   }
 }

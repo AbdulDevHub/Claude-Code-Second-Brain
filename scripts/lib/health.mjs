@@ -58,7 +58,8 @@ export function checkHealth(graph, now = Date.now()) {
       if (days > STALE_DAYS) add('stale', n, `last edited ${days} days ago`);
     }
     if (n.type === 'hook' && n.missing === true) add('missing-script', n, 'its script file is gone, so this hook fails every time it fires');
-    if (PARKABLE.has(n.type) && n.active === false) add('parked', n, n.type === 'hook' ? 'all hooks are off (disableAllHooks)' : `${n.type} is switched off`);
+    // A parked mod is already listed; its hooks being off follows from that, so they aren't listed again.
+    if (PARKABLE.has(n.type) && n.active === false && !(n.type === 'hook' && n.from)) add('parked', n, n.type === 'hook' ? 'all hooks are off (disableAllHooks)' : `${n.type} is switched off`);
   }
 
   const warnKinds = new Set(HEALTH_KINDS.filter((k) => k.level === 'warn').map((k) => k.kind));

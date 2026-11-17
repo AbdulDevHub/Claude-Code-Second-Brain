@@ -10,7 +10,7 @@ When old log entries stop being useful, fold them into the "Earlier history" par
 - Decorative dust (6,500 points on desktop, 4,000 on phones) morphs between layouts. Tools are drawn as hex badges or bead badges with line icons.
 - Old HUD panels (telemetry, channels, activity, event log, runtime) live in the Menu drawer. The last view is saved in localStorage.
 - Health deck (tab) and a HEALTH telemetry row: build-time checks for unindexed memories, broken links, missing descriptions, stale (120+ days), plus info-only orphans and parked tools. Copy buttons in the data sheet.
-- 33 tests pass (`npm test`). README screenshots were refreshed for v2.
+- 34 tests pass (`npm test`). README screenshots were refreshed for v2.
 
 ## In progress
 - Nothing active.
@@ -18,7 +18,7 @@ When old log entries stop being useful, fold them into the "Earlier history" par
 ## Next steps
 - Measure FPS on a real GPU browser. The headless test browser ran at 30–40 fps with 6,500 dust points; lower `DUST_COUNT` in `app.js` if needed.
 - Decide whether the Skills and Applications decks should respect the Menu channel filters (right now they ignore them).
-- Hooks from plugins (each mod's `hooks/hooks.json`) and project `.claude/settings.json` aren't scanned yet. Only the global `settings.json` is.
+- Hook groups in the Timeline crowd the left-hand lane labels a little; consider more lane spacing.
 - Possible Routines tab if scheduled-task data is ever scanned (the reference has one; skipped for lack of data).
 - Panning a 2D view while a node is selected snaps back to the node on release; consider clearing the follow on pan.
 - Publish: create the public GitHub repo, enable Pages (main, root), set the About description, topics and social preview image.
@@ -32,6 +32,7 @@ When old log entries stop being useful, fold them into the "Earlier history" par
 - Audit of `~/.claude` vs the scan: hooks are missing (see Next steps). `dev-mods/` holds per-session dev copies, so it isn't scanned. `jobs/`, `plans/` and `sessions/` are runtime data, not knowledge.
 - Added `docs/screenshots/health.png` to the README.
 - Hooks: a new `hook` node type (teal `#2ee6b8`, round beads on the inner ring with skills, a fish-hook glyph, a Hooks channel, a HOOKS telemetry row, a group in the Applications deck). `scanHooks` makes one node per script, merged across events. Inline commands become "<Event> inline". Generic entry points (`helper.mjs`) take their folder's name. Commands are never emitted, and the demo's fake tokens in hook commands are tested. New health kind `missing-script`. Demo has 4 hooks, 1 with a missing script.
+- Hooks now also come from each mod's `hooks/hooks.json` (`${CLAUDE_PLUGIN_ROOT}` is resolved, and the mod links to its hooks) and from each project's `.claude/settings*.json`. Project folders are found from the `cwd` near the top of the newest session log, reading the first 64 KB only. Paths outside `~/.claude` are never emitted. With more than one owner, hooks sit under groups (Your hooks, Mod hooks, Project hooks). Nodes carry `from`, shown as a FROM row. Hooks of a parked mod aren't listed as parked again in Health. Local mods' `{ modules: [...] }` hooks.json is skipped: that's mod runtime, not command hooks. On your data, the Vercel mod's 5 hooks show (off, since Vercel is parked); no project defines hooks.
 
 ### 2026-11-06 — social preview image
 - Added a 1200×630 share card `docs/og-image.png` (brand, headline, orb crop from `screenshots/hero.png`); its source is `docs/og-template.html`. `og:image`/`twitter:image` now point to it.

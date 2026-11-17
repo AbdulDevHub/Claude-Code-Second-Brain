@@ -65,13 +65,13 @@ function startSecondBrain(isDemo) {
   }
 
   // ---------- graph data ----------
-  const channelOf = (n) => (n.type === 'group' ? (n.id.includes('skill') ? 'skill' : 'mod') : n.type);
+  const channelOf = (n) => (n.type === 'group' ? (n.id.includes('hook') ? 'hook' : n.id.includes('skill') ? 'skill' : 'mod') : n.type);
   const colorOf = (n) => COLORS[n.type === 'hub' ? HUB_COLOR[n.id] || 'hub' : channelOf(n)] || '#ffffff';
   // Every node and link gets the same fixed set of fields up front. Objects with one shape keep V8's
   // property access fast in the physics and render loops; adding fields later made physics ~7x slower.
   const nodes = BRAIN.nodes.map((n, i) => ({
     id: n.id, type: n.type, label: n.label, desc: n.desc || '', body: n.body || '', file: n.file, mtime: n.mtime, size: n.size || 0,
-    sub: n.sub, project: n.project, version: n.version, model: n.model, active: n.active,
+    sub: n.sub, project: n.project, from: n.from, version: n.version, model: n.model, active: n.active,
     channel: channelOf(n), color: colorOf(n), seed: i * 1.37, visibleNow: true,
     degree: 0, r: 0, q: 0, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, fx: null, fy: null, fz: null, tx: 0, ty: 0, tz: 0,
     p: null, rgb: null, rgbDark: null, rgbLight: null, sprite: null, bodySprite: null, badge: null, edgeStyle: '',
@@ -483,6 +483,7 @@ function startSecondBrain(isDemo) {
       n.active != null ? ['STATUS', n.active ? 'ACTIVE' : 'PARKED · switched off in Toolbox', n.active ? 'ok' : 'warn'] : null,
       n.sub && n.sub !== 'memory' ? ['CLASS', n.sub] : null,
       n.project ? ['PROJECT', n.project] : null,
+      n.from && !n.project ? ['FROM', n.from] : null,
       n.version ? ['VERSION', 'v' + n.version] : null,
       n.model ? ['MODEL', n.model] : null,
       n.file ? ['SOURCE', n.file] : null,

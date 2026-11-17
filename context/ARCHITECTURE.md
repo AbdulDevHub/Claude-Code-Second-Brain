@@ -7,7 +7,7 @@ Read before touching the build, layouts or renderer. Update when a layer, data f
 ```
 ~/.claude ─► scripts/build.mjs ─► redact + leak check ─► data.js (window.BRAIN) ─► app.js ─► layouts.js / engine.js ─► renderer.js
 ```
-- **Build (Node):** `sources.mjs` has one scanner per source (hooks come from `settings.json` `hooks`: one node per script, with commands never emitted). `graph.mjs` registers nodes and links and resolves `[[wikilinks]]`, relative `.md` links and name mentions. `redact.mjs` scrubs, then refuses to write if anything personal survives. `health.mjs` runs read-only checks on the finished graph (it uses `graph.unresolved` and `graph.refs`). Output: `{ nodes, links, stats, health }`, with the summary in `stats.health`.
+- **Build (Node):** `sources.mjs` has one scanner per source (hooks come from `settings.json`, mod `hooks/hooks.json` and project `.claude/settings*.json`: one node per script, with commands never emitted). `graph.mjs` registers nodes and links and resolves `[[wikilinks]]`, relative `.md` links and name mentions. `redact.mjs` scrubs, then refuses to write if anything personal survives. `health.mjs` runs read-only checks on the finished graph (it uses `graph.unresolved` and `graph.refs`). Output: `{ nodes, links, stats, health }`, with the summary in `stats.health`.
 - **Node fields from the build:** `id, type, label, desc, body, file, mtime, size, sub, project, version, model, active`. Types are `core, section, hub, project, memory, note, skill, mod, mcp, agent, reference, group`. `active === false` means parked.
 - **Links:** `kind` is `structure` (source = parent; core → hub → group/project → item), `wikilink` or `mention`.
 

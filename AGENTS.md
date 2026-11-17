@@ -13,11 +13,11 @@ Vanilla JS (ES2022), Canvas 2D, Node 18.3+ (no npm dependencies). Browser loads 
 
 ## Commands
 - `npm run build` — scan your `~/.claude` into `data.js` · `npm run build:demo` — rebuild `demo/data.js`
-- `npm run open` — build, then open `index.html` · `npm test` — node:test suites (33 tests)
+- `npm run open` — build, then open `index.html` · `npm test` — node:test suites (34 tests)
 - Playwright can't open `file://`; serve the folder over http (e.g. `npm run serve`, port 4173) to screenshot.
 
 ## Code map
-- `scripts/build.mjs` uses `scripts/lib/`: `sources.mjs` (one scanner per source, incl. parked tools and settings.json hooks; agents are scanned recursively like Claude Code does), `graph.mjs` (nodes, links, cross-links; keeps `unresolved` and `refs` for health), `health.mjs` (build-time checks → `BRAIN.health` + `stats.health`; keep its kinds in sync with `HEALTH_KINDS` in `app.js`), `redact.mjs` (scrub + leak check), `text.mjs`. Writes `data.js` (`window.BRAIN`).
+- `scripts/build.mjs` uses `scripts/lib/`: `sources.mjs` (one scanner per source, incl. parked tools and hooks from settings.json, mods and projects; agents are scanned recursively like Claude Code does), `graph.mjs` (nodes, links, cross-links; keeps `unresolved` and `refs` for health), `health.mjs` (build-time checks → `BRAIN.health` + `stats.health`; keep its kinds in sync with `HEALTH_KINDS` in `app.js`), `redact.mjs` (scrub + leak check), `text.mjs`. Writes `data.js` (`window.BRAIN`).
 - Browser scripts are classic (no modules) so the page opens from `file://`: `engine.js` (physics + camera, `flat` mode), `layouts.js` (targets + dust per layout), `glyphs.js` (badge icons), `renderer.js`, `app.js` (HUD, views, decks, drawer). `window.__brain` is a devtools handle.
 - Details: `context/ARCHITECTURE.md`; look and UI rules: `context/UI_RULES.md`, `context/UI_TOKENS.md`.
 

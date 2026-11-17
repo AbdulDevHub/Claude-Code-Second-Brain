@@ -26,7 +26,7 @@ Claude Code remembers you through plain files in `~/.claude`: your `CLAUDE.md`, 
 | **Hubs** (ringed, labelled) | One per category: Memory, Notes, Skills, Mods, MCP Servers, Agents, Hooks, Reference. Each takes its category's color. |
 | **Memories and notes** (orange, red) | `projects/*/memory/*.md`, the facts Claude saved per project, and the notes index, as bright points on the orb. |
 | **Skills** (amber beads) | Local skills, claude.ai-synced skills and **parked** skills switched off in [Toolbox](#parked-tools), on the inner orbit ring. |
-| **Hooks** (teal beads) | Scripts registered under `hooks` in `settings.json`, one per script, with their events, matchers and timeouts. The commands themselves are never read into the output. They share the inner ring with skills. |
+| **Hooks** (teal beads) | Scripts registered under `hooks` in your `settings.json`, in each mod's `hooks/hooks.json` and in each project's `.claude/settings.json`, one per script and grouped by owner, with their events, matchers and timeouts. The commands themselves are never read into the output. They share the inner ring with skills. |
 | **Apps** (blue hex badges) | Mods, marketplace plugins, MCP servers and agents on the outer ring. MCP servers show only a secret-free host or package name. |
 | **Dashed rims** | Parked tools: installed but switched off. They carry no signal pulses. |
 | **Solid / dashed lines** | Structure and `[[wikilinks]]` / mentions of a tool inside a document. Faint in the structured layouts, lit when you hover or select. |
@@ -110,7 +110,7 @@ Requires Node 18.3+. There are no dependencies to install.
 npm run build:demo   # optional: rebuild the bundled demo brain
 npm run build        # scan your own ~/.claude into data.js
 npm run open         # build, then open index.html in your browser
-npm test             # 33 tests: parser, redaction, MCP and hook secrets, odd config files, graph, health, camera, physics, layouts
+npm test             # 34 tests: parser, redaction, MCP and hook secrets, odd config files, graph, health, camera, physics, layouts
 ```
 
 `index.html` opens straight from disk. With no `data.js`, it falls back to the fictional demo brain in [`demo/`](demo/), so a fresh clone works right away.

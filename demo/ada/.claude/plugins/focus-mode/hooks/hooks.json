@@ -1,0 +1,7 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      { "matcher": "Read|Grep|Glob", "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/collapse-output.mjs\" --api-key demo-secret-token-123", "timeout": 5 }] }
+    ]
+  }
+}
