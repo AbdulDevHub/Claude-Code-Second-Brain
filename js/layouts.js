@@ -133,29 +133,76 @@
     ctx.sectorize(branches); // other layouts re-slice the sectors
     if (core) at(core, 0, 0, 0);
     fibSphere(sections, R * 0.16);
-    const inner = branches.filter((b) => b.kind === 'inner');
-    for (const b of inner) {
-      const am = (b.a0 + b.a1) / 2, span = b.a1 - b.a0, pad = Math.min(0.12, span * 0.12);
+    // Each inner branch becomes tidy "islands" on the shell inside its sector: loose items in one sunflower patch,
+    // every sub-folder in its own patch with the folder node at the patch center.
+    const onShell = (n, lat, lon) => at(n, R * Math.cos(lat) * Math.cos(lon), -R * Math.sin(lat), R * Math.cos(lat) * Math.sin(lon));
+    // Skills, hooks and apps live on the rings, so the shell is shared out among the inner branches only.
+    const inner = branches.filter((x) => x.kind === 'inner');
+    if (inner.length) ctx.sectorize(inner);
+    inner.forEach((b, bi) => {
+      const am = (b.a0 + b.a1) / 2, span = b.a1 - b.a0, pad = Math.min(0.1, span * 0.1);
       if (b.hub) at(b.hub, Math.cos(am) * R * 0.55, 0, Math.sin(am) * R * 0.55);
-      b.items.forEach((n, j) => {
-        const f = (j + 0.5) / b.items.length;
-        const lat = Math.asin(1 - 2 * f) * 0.85;
-        const lon = b.a0 + pad + ((j * GOLDEN) / TAU % 1) * (span - 2 * pad);
-        const r = R * (ctx.depth.get(n.id) === 1 && b.items.length > 3 ? 0.8 : 1);
-        at(n, r * Math.cos(lat) * Math.cos(lon), -r * Math.sin(lat), r * Math.cos(lat) * Math.sin(lon));
+      const groups = [], loose = [];
+      for (let j = 0; j < b.items.length; j++) {
+        const n = b.items[j], dep = ctx.depth.get(n.id) || 1;
+        if (dep === 1 && (ctx.depth.get(b.items[j + 1]?.id) || 0) > 1) {
+          const g = [n];
+          while (j + 1 < b.items.length && (ctx.depth.get(b.items[j + 1].id) || 1) > 1) g.push(b.items[++j]);
+          groups.push(g);
+        } else loose.push(n);
+      }
+      if (loose.length) groups.unshift(loose);
+      if (!groups.length) return;
+      // Pick the patch scale and number of rows so the patches fit the sector without crowding.
+      const avail = Math.max(0.2, span - 2 * pad);
+      let rows, c = 0.055, lanes;
+      for (rows = groups.length >= 4 ? 2 : 1; rows <= 3; rows++) {
+        lanes = Array.from({ length: rows }, () => ({ g: [], w: 0 }));
+        for (const g of groups) {
+          const lane = lanes.reduce((m, l) => (l.w < m.w ? l : m));
+          lane.g.push(g); lane.w += 2 * Math.sqrt(g.length) + 1.6;
+        }
+        c = Math.min(0.055, avail / Math.max(...lanes.map((l) => l.w)));
+        if (c >= 0.036) break;
+      }
+      rows = lanes.length;
+      const tall = Math.max(...groups.map((g) => Math.sqrt(g.length)));
+      const rowGap = Math.min(0.5, c * (2 * tall + 1.6));
+      lanes.forEach((lane, r) => {
+        const tilt = rows === 1 ? (bi % 2 ? -0.32 : 0.32) : 0; // lone rows sit off the equator, clear of the bead ring
+        const lat0 = (r - (rows - 1) / 2) * rowGap + tilt, cl = Math.cos(lat0);
+        let lon = am - (lane.w * c) / cl / 2;
+        for (const g of lane.g) {
+          const half = (Math.sqrt(g.length) + 0.8) * c / cl;
+          lon += half;
+          g.forEach((n, k) => {
+            const rho = c * Math.sqrt(k) * 1.15, th = k * GOLDEN;
+            const lat = lat0 + rho * Math.sin(th);
+            onShell(n, lat, lon + (rho * Math.cos(th)) / Math.cos(lat));
+          });
+          lon += half;
+        }
       });
-    }
-    const ring = (list, r, t) => list.forEach((n, i) => {
-      const a = -Math.PI / 2 + (i / list.length) * TAU;
-      tiltX(Math.cos(a) * r, 0, Math.sin(a) * r, t, v);
-      at(n, v[0], v[1], v[2]);
     });
+    // Rings: groups (a hub or sub-folder and what follows it) are separated by a small gap so they read as arcs.
+    const ring = (list, r, t) => {
+      const gapBefore = list.map((n, i) => ((n.type === 'hub' || (ctx.depth.get(list[i + 1]?.id) || 0) > (ctx.depth.get(n.id) || 0)) ? 1.5 : 0));
+      const slots = list.length + gapBefore.reduce((s, g) => s + g, 0);
+      let pos = 0;
+      list.forEach((n, i) => {
+        pos += gapBefore[i];
+        const a = -Math.PI / 2 + (pos / slots) * TAU;
+        tiltX(Math.cos(a) * r, 0, Math.sin(a) * r, t, v);
+        at(n, v[0], v[1], v[2]);
+        pos += 1;
+      });
+    };
     ring(runOf(ctx, 'bead'), R * 1.34, TA);
     ring(runOf(ctx, 'app'), R * 1.6, TB);
     out.extent = { w: R * 1.62 + 24, h: R * 1.22 };
 
     // dust: latitude rows on the shell, colored by sector
-    const all = branches;
+    const all = inner.length ? inner : branches;
     const ci = all.map((b) => ctx.colorIndex(b.color));    const shell = budget(d, 0.58), rows = 44;
     const per = (shell * Math.PI) / (2 * rows);
     for (let k = 0; k < rows; k++) {
