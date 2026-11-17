@@ -383,7 +383,7 @@
   function timeline(ctx, rand, d, out) {
     const { R, core, sections, branches, nodes } = ctx;
     const lanes = [{ head: core, items: sections, color: '#fff1e0' }, ...branches.map((b) => ({ head: b.hub, items: b.items, color: b.color }))];
-    const gap = 84, L = R * 1.5, CURVE = 2.2; // recent weeks get more room than old months
+    const gap = 96, L = R * 1.5, CURVE = 2.2; // recent weeks get more room than old months
     const times = nodes.map((n) => n.mtime).filter((t) => t > 0);
     let t0 = times.length ? Math.min(...times) : Date.now() - 864e5 * 30, t1 = times.length ? Math.max(...times) : Date.now();
     if (t1 - t0 < 864e5) { t0 -= 864e5; t1 += 3600e3; }
@@ -394,7 +394,13 @@
       const y = laneY(k);
       if (lane.head) at(lane.head, -L - (lane.head.type === "core" ? 190 : 150), y, 0);
       const dated = lane.items.filter((n) => n.mtime > 0).sort((a, b) => a.mtime - b.mtime);
-      for (const n of lane.items) if (!(n.mtime > 0)) at(n, -L - 80, y, 0);
+      // Undated items (groups, MCP servers, inline hooks) fan out in a small grid between the lane head and the
+      // first date instead of piling onto one point: up to 5 per row, rows alternating below and above the lane.
+      // They start right of the head so they stay clear of its label.
+      lane.items.filter((n) => !(n.mtime > 0)).forEach((n, i) => {
+        const col = i % 5, row = Math.floor(i / 5);
+        at(n, -L - 92 + col * 24, y + (row ? (row % 2 ? 1 : -1) * Math.ceil(row / 2) * 20 : 0), 0);
+      });
       let lastX = -Infinity, stack = 0;
       for (const n of dated) {
         const x = xOf(n.mtime);

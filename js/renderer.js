@@ -370,6 +370,7 @@
 
     // Labels are placed greedily by priority (selection > focus > hubs > nearest) and skipped when they would overlap.
     const RANK = { core: 0, hub: 1, project: 2, group: 2 };
+    const labelSpot = new Map(); // node id -> index of the label spot it used last frame
     function drawLabels(order, focus) {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
@@ -378,6 +379,8 @@
         const important = n.type in RANK;
         const inFocus = focus && focus.has(n.id);
         if (focus && !inFocus && !important) return false;
+        // Timeline lanes already name the category; group captions there just crowd the lane heads.
+        if (n.type === 'group' && state.layout === 'timeline' && !inFocus) return false;
         if (important || inFocus) return true;
         if (n.type === "skill" || n.type === "group") return false; // the bead ring would be a wall of text
         return n.r * n.p.s >= (n.badge ? 10 : 6.5);
@@ -386,6 +389,14 @@
         const pb = b === state.selected ? -2 : b === state.hovered ? -1 : RANK[b.type] ?? 3;
         return pa - pb || a.p.depth - b.p.depth;
       });
+      // Node discs, so a label doesn't sit on top of another node (a hub caption over a bead, say).
+      const discs = [];
+      for (const m of order) {
+        if (!m.p || m.p.s <= 0) continue;
+        const r = m.r * m.p.s * (m.badge ? 1.25 : 1);
+        if (r >= 2.5) discs.push({ n: m, x0: m.p.x - r, y0: m.p.y - r, x1: m.p.x + r, y1: m.p.y + r });
+      }
+      const hit = (box, b) => box.x0 < b.x1 && box.x1 > b.x0 && box.y0 < b.y1 && box.y1 > b.y0;
       for (const n of candidates) {
         const important = n.type in RANK;
         const inFocus = focus && focus.has(n.id);
@@ -395,17 +406,40 @@
         const text = important ? n.label.toUpperCase() : n.label;
         ctx.font = n.type === 'core' ? "700 13px 'Outfit', sans-serif" : important ? "600 11px 'Outfit', sans-serif" : "500 11px 'Outfit', sans-serif";
         if ('letterSpacing' in ctx) ctx.letterSpacing = important ? '3px' : '0.3px';
-        const y = n.p.y + R * (n.type === 'core' ? 3.4 : n.badge ? 1.5 : important ? 2.3 : 1.6) + 5;
         const wKey = ctx.font + '|' + text;
         let w = labelWidths.get(wKey);
         if (w === undefined) { w = ctx.measureText(text).width; labelWidths.set(wKey, w); }
-        const box = { x0: n.p.x - w / 2 - 5, y0: y - 2, x1: n.p.x + w / 2 + 5, y1: y + 14 };
-        if (placed.some((b) => box.x0 < b.x1 && box.x1 > b.x0 && box.y0 < b.y1 && box.y1 > b.y0)) continue;
+        // Try below (the usual spot), then above, right and left; the first spot clear of labels and other nodes wins.
+        // If every spot touches a node, fall back to the first spot clear of labels, as before.
+        const below = n.p.y + R * (n.type === 'core' ? 3.4 : n.badge ? 1.5 : important ? 2.3 : 1.6) + 5;
+        const gapX = R * (n.badge ? 1.3 : 1) + 6;
+        const spots = [
+          { cx: n.p.x, y: below },
+          { cx: n.p.x, y: n.p.y - R * (n.badge ? 1.5 : 1.3) - 19 },
+          { cx: n.p.x + gapX + w / 2 + 5, y: n.p.y - 7 },
+          { cx: n.p.x - gapX - w / 2 - 5, y: n.p.y - 7 },
+        ];
+        // In 3D, try last frame's spot first so labels don't flip sides while the camera orbits. Flat views hold
+        // still, so they use a fixed preference (lane heads on the Timeline read best to the left of their node).
+        const base = state.layout === 'timeline' && (n.type === 'hub' || n.type === 'core') ? [3, 0, 1, 2] : [0, 1, 2, 3];
+        const last = state.flat ? undefined : labelSpot.get(n.id);
+        const tryOrder = last != null ? [last, ...base.filter((i) => i !== last)] : base;
+        let pick = null, fallback = null;
+        for (const i of tryOrder) {
+          const s = spots[i];
+          const box = { x0: s.cx - w / 2 - 5, y0: s.y - 2, x1: s.cx + w / 2 + 5, y1: s.y + 14, cx: s.cx, y: s.y, i };
+          if (placed.some((b) => hit(box, b))) continue;
+          if (!fallback) fallback = box;
+          if (!discs.some((d) => d.n !== n && hit(box, d))) { pick = box; break; }
+        }
+        if (pick) labelSpot.set(n.id, pick.i);
+        const box = pick || fallback;
+        if (!box) continue;
         placed.push(box);
         ctx.fillStyle = `rgba(0,0,0,${0.55 * fog})`;
         ctx.fillRect(box.x0, box.y0, box.x1 - box.x0, 16);
         ctx.fillStyle = important ? rgba(n.rgbLight, fog) : n.active === false ? `rgba(165,150,140,${0.8 * fog})` : `rgba(255,244,234,${0.92 * fog})`;
-        ctx.fillText(text, n.p.x, y);
+        ctx.fillText(text, box.cx, box.y);
       }
       if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
     }

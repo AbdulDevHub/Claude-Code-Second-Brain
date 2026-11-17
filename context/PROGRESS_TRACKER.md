@@ -18,7 +18,6 @@ When old log entries stop being useful, fold them into the "Earlier history" par
 ## Next steps
 - Measure FPS on a real GPU browser. The headless test browser ran at 30–40 fps with 6,500 dust points; lower `DUST_COUNT` in `app.js` if needed.
 - Decide whether the Skills and Applications decks should respect the Menu channel filters (right now they ignore them).
-- Hook groups in the Timeline crowd the left-hand lane labels a little; consider more lane spacing.
 - Possible Routines tab if scheduled-task data is ever scanned (the reference has one; skipped for lack of data).
 - Panning a 2D view while a node is selected snaps back to the node on release; consider clearing the follow on pan.
 - Publish: create the public GitHub repo, enable Pages (main, root), set the About description, topics and social preview image.
@@ -33,6 +32,7 @@ When old log entries stop being useful, fold them into the "Earlier history" par
 - Added `docs/screenshots/health.png` to the README.
 - Hooks: a new `hook` node type (teal `#2ee6b8`, round beads on the inner ring with skills, a fish-hook glyph, a Hooks channel, a HOOKS telemetry row, a group in the Applications deck). `scanHooks` makes one node per script, merged across events. Inline commands become "<Event> inline". Generic entry points (`helper.mjs`) take their folder's name. Commands are never emitted, and the demo's fake tokens in hook commands are tested. New health kind `missing-script`. Demo has 4 hooks, 1 with a missing script.
 - Hooks now also come from each mod's `hooks/hooks.json` (`${CLAUDE_PLUGIN_ROOT}` is resolved, and the mod links to its hooks) and from each project's `.claude/settings*.json`. Project folders are found from the `cwd` near the top of the newest session log, reading the first 64 KB only. Paths outside `~/.claude` are never emitted. With more than one owner, hooks sit under groups (Your hooks, Mod hooks, Project hooks). Nodes carry `from`, shown as a FROM row. Hooks of a parked mod aren't listed as parked again in Health. Local mods' `{ modules: [...] }` hooks.json is skipped: that's mod runtime, not command hooks. On your data, the Vercel mod's 5 hooks show (off, since Vercel is parked); no project defines hooks.
+- Labels: each label tries below, above, right, then left of its node, and takes the first spot clear of other labels and node discs (`drawLabels` in `renderer.js`). In 3D it keeps last frame's side (`labelSpot`) so labels don't flip while orbiting. Timeline lane heads prefer the left, group captions are hidden on the Timeline unless focused (`state.layout`), undated items fan out in a small grid, and the lane gap is 96.
 
 ### 2026-11-06 — social preview image
 - Added a 1200×630 share card `docs/og-image.png` (brand, headline, orb crop from `screenshots/hero.png`); its source is `docs/og-template.html`. `og:image`/`twitter:image` now point to it.
