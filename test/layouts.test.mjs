@@ -49,14 +49,14 @@ test('layouts: seeded, so the same layout looks the same every time', () => {
   assert.deepEqual([...a], [...b]);
 });
 
-test('layouts: orb puts knowledge, skills and hooks on the sphere and apps on the outer ring', () => {
+test('layouts: orb puts every item on the sphere and the category hubs on the outer ring', () => {
   const { nodes, ctx } = graph();
   Layouts.build('orb', ctx, 500);
   const r = (n) => Math.hypot(n.tx, n.ty, n.tz);
   const core = nodes.find((n) => n.type === 'core');
   assert.equal(r(core), 0);
-  for (const n of nodes.filter((x) => ['memory', 'note', 'skill', 'hook'].includes(x.type))) assert.ok(r(n) <= ctx.R * 1.001, n.id);
-  for (const n of nodes.filter((x) => ['mod', 'mcp', 'agent'].includes(x.type))) assert.ok(r(n) > ctx.R * 1.2, n.id);
+  for (const n of nodes.filter((x) => ['memory', 'note', 'skill', 'hook', 'mod', 'mcp', 'agent'].includes(x.type))) assert.ok(Math.abs(r(n) - ctx.R) < 1, n.id);
+  for (const n of nodes.filter((x) => x.type === 'hub')) assert.ok(r(n) > ctx.R * 1.2, n.id);
 });
 
 test('layouts: rings keep tools outside the knowledge sectors', () => {

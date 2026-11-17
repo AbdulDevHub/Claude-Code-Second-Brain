@@ -8,7 +8,7 @@ Use these instead of new ad-hoc colors. Update this file when a token changes in
 |---|---|---|
 | `--bg` | `#000` | page and canvas background |
 | `--orange` | `#ff6a2b` | primary accent, view name, memory nodes |
-| `--orange-soft` | `#ff8a3d` | projects, bead-ring dust in 2D Rings (`RING` in layouts.js) |
+| `--orange-soft` | `#ff8a3d` | projects, bead-ring dust in 2D Rings and the orb's hub ring (`RING` in layouts.js) |
 | `--red` | `#ff3b30` | notes |
 | `--amber` | `#ffb347` | skills, parked status text |
 | `--blue` | `#3aa0ff` | MCP servers, app-ring dust |

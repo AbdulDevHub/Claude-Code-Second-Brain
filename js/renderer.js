@@ -141,6 +141,7 @@
       n.badge = BADGE[n.type] && window.NeuralGlyphs
         ? badgeSprite(BADGE[n.type], window.NeuralGlyphs.glyphFor(n), n.color, n.active === false)
         : null;
+      n.hubBadge = n.type === 'hub' && window.NeuralGlyphs ? badgeSprite('hex', window.NeuralGlyphs.glyphFor(n), n.color, false) : null;
       n.edgeStyle = `rgb(${n.rgb.join(',')})`;
     }
     const labelWidths = new Map(); // font|text -> px, so measureText runs once per label
@@ -157,6 +158,7 @@
     // On the orb, knowledge, skills and hooks are the sphere's own dots: one size, one shape, only the color differs.
     const SHELL_R = 4.2;
     const onShell = (n) => state.shell !== null && state.shell !== undefined && state.shell.has(n.id);
+    const onRing = (n) => state.ring !== null && state.ring !== undefined && n.hubBadge !== null && state.ring.has(n.id);
     const bodyR = (n) => (onShell(n) ? SHELL_R : n.r);
     const fogAt = (depth) => (state.flat ? 1 : clamp(1.3 - (depth / cam.dist) * 0.62, 0.12, 1));
 
@@ -351,6 +353,17 @@
           ctx.globalCompositeOperation = 'source-over';
           ctx.globalAlpha = fog * (dormant ? 0.45 : 1);
           ctx.drawImage(n.bodySprite, x - D, y - D, D * 2, D * 2);
+          ctx.globalAlpha = 1;
+          continue;
+        }
+        if (onRing(n)) { // orb ring hubs: a hex badge, so they never read as sphere dots
+          ctx.globalAlpha = fog * 0.5;
+          const G = R * 4.4 * pulse;
+          ctx.drawImage(n.sprite, x - G / 2, y - G / 2, G, G);
+          ctx.globalCompositeOperation = 'source-over';
+          ctx.globalAlpha = fog;
+          const B = R * 3.8;
+          ctx.drawImage(n.hubBadge, x - B / 2, y - B / 2, B, B);
           ctx.globalAlpha = 1;
           continue;
         }

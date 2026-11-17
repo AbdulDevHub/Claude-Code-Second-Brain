@@ -63,8 +63,12 @@
   ];
   const BY_TYPE = { skill: 'bolt', mod: 'box', mcp: 'plug', agent: 'bot', hook: 'hook', group: 'folder', hub: 'sparkle', core: 'sparkle' };
 
+  // Category hubs (hex badges on the orb's ring) get an icon for what they hold.
+  const HUB_RULES = [[/memor/, 'brain'], [/note/, 'pen'], [/refer/, 'book'], [/skill/, 'bolt'], [/hook/, 'hook'], [/mod/, 'box'], [/mcp/, 'plug'], [/agent/, 'bot']];
+
   function glyphFor(n) {
     const text = `${n.label || ''} ${n.id || ''}`.toLowerCase();
+    if (n.type === 'hub') for (const [re, key] of HUB_RULES) if (re.test(text)) return key;
     if (n.type === 'skill' || n.type === 'mod' || n.type === 'mcp' || n.type === 'agent' || n.type === 'hook') {
       for (const [re, key] of RULES) if (re.test(text)) return key;
     }
