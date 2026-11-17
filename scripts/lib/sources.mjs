@@ -7,7 +7,7 @@ import { existsSync } from 'node:fs';
 import { read, readJson, objectOr, ls, isDir, mtime, titleCase, firstHeading, frontmatter, escapeRegExp } from './text.mjs';
 
 const NOT_MODS = new Set(['cache', 'data', 'marketplaces', 'store', 'synced']);
-const HUBS = { memory: 'Memory', notes: 'Notes', skill: 'Skills', mod: 'Mods', agent: 'Agents', mcp: 'MCP Servers', reference: 'Reference' };
+const HUBS = { memory: 'Memory', notes: 'Notes', skill: 'Skills', mod: 'Mods', agent: 'Agents', mcp: 'MCP Servers', hook: 'Hooks', reference: 'Reference' };
 
 /** `~/.claude/...` display path for a file under the Claude folder. */
 const tilde = (ctx, path) => `~/.claude/${path.slice(ctx.claude.length + 1).replace(/\\/g, '/')}`;
@@ -25,6 +25,7 @@ export function scanAll(g, ctx) {
   scanMods(g, ctx);
   scanAgents(g, ctx);
   scanMcp(g, ctx);
+  scanHooks(g, ctx);
   scanReference(g, ctx);
   pruneEmptyHubs(g);
   g.resolveCrossLinks();
@@ -284,7 +285,84 @@ function scanMcp(g, ctx) {
   }
 }
 
-// ---------- reference docs ----------
+// ---------- hooks: settings.json "hooks", one node per script ----------
+// Commands can carry tokens and flags, so they are never emitted: only the script's name, its events,
+// matchers, timeout and async flag, and the script's own leading comment as a description.
+const SCRIPT_RE = /(?:"([^"]+\.(?:mjs|cjs|js|ts|ps1|py|sh|bat|cmd|exe))"|'([^']+\.(?:mjs|cjs|js|ts|ps1|py|sh|bat|cmd|exe))'|([^\s"']+\.(?:mjs|cjs|js|ts|ps1|py|sh|bat|cmd|exe)))(?=$|[\s"'])/i;
+
+/**
+ * The script a hook command runs, as { name, path }, or null for inline commands.
+ * `path` is absolute (it may not exist), or null when it depends on an env var or the working
+ * directory ($CLAUDE_PROJECT_DIR, ${CLAUDE_PLUGIN_ROOT}, ./x.sh), so it can't be checked from here.
+ */
+export function hookScript(command, home) {
+  const cmd = String(command || '');
+  const m = cmd.match(SCRIPT_RE);
+  if (!m) return null;
+  const token = cmd.slice(0, m.index).split(/\s/).pop() + m[0]; // the whole word, including any $VAR prefix glued to it
+  const homeFwd = home.replace(/\\/g, '/');
+  let p = (m[1] || m[2] || m[3]).replace(/\\/g, '/');
+  p = p.replace(/^(~|\$HOME|\$\{HOME\}|%USERPROFILE%)(?=\/)/i, homeFwd);
+  const resolvable = !/[$%]/.test(p) && !/[$%]/.test(token.replace(/^["']?(~|\$HOME|\$\{HOME\}|%USERPROFILE%)/i, '')) && /^([a-z]:)?\//i.test(p);
+  let name = basename(p).replace(/\.[^.]+$/, '');
+  // Generic entry points (helper.mjs, index.js) inside ~/.claude are named after their folder instead.
+  // Only there: outside it, a parent folder can be a username.
+  const inClaude = p.toLowerCase().startsWith(`${homeFwd}/.claude/`.toLowerCase());
+  if (inClaude && /^(helper|helpers|index|main|run|cli|hook|script)$/i.test(name) && basename(dirname(p))) name = basename(dirname(p));
+  return { name, path: resolvable ? p : null };
+}
+
+/** First comment sentence of a script (after a shebang), for its description. */
+function scriptSummary(text) {
+  const lines = text.split('\n').filter((l) => !l.startsWith('#!')).slice(0, 12);
+  const comment = [];
+  for (const l of lines) {
+    const m = l.match(/^\s*(?:\/\/|#|<#|\*|\/\*\*?)\s?(.*?)\s*(?:#>|\*\/)?$/);
+    if (!m) break;
+    if (m[1]) comment.push(m[1]);
+    else if (comment.length) break;
+  }
+  const text1 = comment.join(' ').replace(/^\.SYNOPSIS\s*/i, '');
+  return text1.split(/(?<=\.)\s/)[0].slice(0, 200) || undefined;
+}
+
+function scanHooks(g, ctx) {
+  const hooks = objectOr(ctx.settings.hooks);
+  const byName = new Map();
+  for (const [event, groups] of Object.entries(hooks)) {
+    if (!Array.isArray(groups)) continue;
+    for (const group of groups) {
+      for (const h of Array.isArray(group?.hooks) ? group.hooks : []) {
+        const script = h?.type === 'command' ? hookScript(h.command, ctx.home) : null;
+        const name = script ? script.name : `${event} ${h?.type === 'prompt' || h?.type === 'agent' ? h.type : 'inline'}`;
+        const key = script?.path ? script.path.toLowerCase() : name; // same script on several events = one node
+        if (!byName.has(key)) byName.set(key, { name, script, regs: [] });
+        byName.get(key).regs.push({ event, matcher: typeof group.matcher === 'string' && group.matcher ? group.matcher : '', timeout: h?.timeout, async: !!h?.async, type: h?.type || 'command' });
+      }
+    }
+  }
+  const off = ctx.settings.disableAllHooks === true;
+  const cell = (s) => String(s).replace(/\|/g, '\\|');
+  for (const { name, script, regs } of byName.values()) {
+    const path = script?.path;
+    const exists = !!path && existsSync(path) && !isDir(path);
+    const inClaude = exists && normalizePath(path).startsWith(normalizePath(ctx.claude) + '/');
+    const events = [...new Set(regs.map((r) => r.event))];
+    const table = ['| Event | Matcher | Timeout | Async |', '| --- | --- | --- | --- |',
+      ...regs.map((r) => `| ${r.event} | ${r.matcher ? `\`${cell(r.matcher)}\`` : 'all'} | ${r.timeout ? `${r.timeout}s` : 'default'} | ${r.async ? 'yes' : 'no'} |`)].join('\n');
+    const summary = inClaude && /\.(mjs|cjs|js|ts|ps1|py|sh)$/i.test(path) ? scriptSummary(read(path)) : undefined;
+    const id = g.addNode(`hook:${name}`, {
+      label: name, type: 'hook', sub: events.join(' · '),
+      file: inClaude ? tilde(ctx, path) : undefined,
+      desc: summary || (script ? `Runs ${script.name} on ${events.join(', ')}` : `Inline ${regs[0].type} on ${events.join(', ')}`),
+      body: `${table}\n\n${script ? (exists ? '' : path ? '**Script not found.** ' : 'Its location depends on an environment variable or the working folder. ') + (inClaude || !path ? '' : 'Lives outside `~/.claude`. ') : 'An inline command, not a script file. '}The command itself is never shown.`.trim(),
+      mtime: exists ? mtime(path) : undefined, active: !off, missing: script && path ? !exists : undefined,
+    });
+    g.link('hub:hook', id);
+    g.register(id, { slugs: [name] });
+  }
+}
+
 function scanReference(g, ctx) {
   const files = [
     ...ls(join(ctx.claude, 'reference')).filter((f) => f.endsWith('.md')).map((f) => join(ctx.claude, 'reference', f)),

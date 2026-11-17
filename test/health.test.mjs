@@ -13,8 +13,8 @@ test('demo build flags the untidy memory and lists parked tools', () => {
   assert.deepEqual(kinds(health, 'memory:Code-weather-app/offline-mode'), ['missing-link', 'no-description', 'orphan', 'unindexed']);
   assert.equal(kinds(health, 'memory:Code-weather-app/units-preference').length, 0, 'indexed, described and linked');
   assert.equal(health.filter((h) => h.kind === 'parked').length, stats.skills.total - stats.skills.active + stats.mods.total - stats.mods.active + stats.mcp.total - stats.mcp.active);
-  assert.equal(stats.health.clean, stats.health.checked - 1);
-  assert.equal(stats.health.flagged, 1);
+  assert.equal(stats.health.flagged, 2, 'offline-mode memory + the hook whose script is missing');
+  assert.equal(stats.health.clean, stats.health.checked - 2);
 });
 
 test('unindexed only applies inside a project that has its own MEMORY.md; real files are not broken links', () => {

@@ -5,7 +5,7 @@ import { existsSync } from 'node:fs';
 import { escapeRegExp } from './text.mjs';
 
 const MAX_BODY = 20000;
-const MENTIONABLE = new Set(['skill', 'mod', 'agent', 'mcp']);
+const MENTIONABLE = new Set(['skill', 'mod', 'agent', 'mcp', 'hook']);
 const MENTION_SOURCES = new Set(['section', 'memory', 'note', 'reference', 'project']);
 
 export class BrainGraph {

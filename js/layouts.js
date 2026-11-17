@@ -6,7 +6,7 @@
 (() => {
   const TAU = Math.PI * 2;
   const GOLDEN = 2.399963229728653;
-  const BEAD_HUBS = new Set(['hub:skill']);
+  const BEAD_HUBS = new Set(['hub:skill', 'hub:hook']); // skills and hooks share the inner orbit ring as round beads
   const APP_HUBS = new Set(['hub:mod', 'hub:mcp', 'hub:agent']);
   const WHITE = '#fff1e0', RING = '#ff8a3d', BLUE = '#3aa0ff';
 

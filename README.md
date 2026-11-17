@@ -10,11 +10,11 @@
 
 ## Project Overview
 
-Claude Code remembers you through plain files in `~/.claude`: your `CLAUDE.md`, per-project memories, notes, skills, plugins, MCP servers and sub-agents. They're scattered across folders and hard to see as a whole. Second Brain turns them into something you can explore.
+Claude Code remembers you through plain files in `~/.claude`: your `CLAUDE.md`, per-project memories, notes, skills, plugins, MCP servers, sub-agents and hooks. They're scattered across folders and hard to see as a whole. Second Brain turns them into something you can explore.
 
 - **Every node is a real file**, and every line is a real link between files (`[[wikilinks]]`, references, tool mentions). Click one to read it.
 - **Seven views of one brain:** a dotted 3D orb, a 3D force graph, 2D rings, hex, circle and force maps, and a timeline, with thousands of particles morphing between them.
-- **A health check for your setup:** it flags memories missing from `MEMORY.md` (so Claude never loads them), broken `[[links]]`, missing descriptions, unlinked or stale notes, and parked tools.
+- **A health check for your setup:** it flags memories missing from `MEMORY.md` (so Claude never loads them), broken `[[links]]`, missing descriptions, hooks whose script is gone, unlinked or stale notes, and parked tools.
 - **Private by default:** a local build script scans and scrubs your files, and refuses to write output if anything personal survives.
 - **Built from scratch:** hand-written layouts, 3D physics, camera and Canvas 2D renderer. No graph library, no WebGL, no npm dependencies. It opens straight from disk.
 
@@ -23,9 +23,10 @@ Claude Code remembers you through plain files in `~/.claude`: your `CLAUDE.md`, 
 | | |
 | --- | --- |
 | **Core** (white sparkle, center) | `~/.claude/CLAUDE.md`, the global instructions loaded into every session. The white cluster around it holds its `##` sections. |
-| **Hubs** (ringed, labelled) | One per category: Memory, Notes, Skills, Mods, MCP Servers, Agents, Reference. Each takes its category's color. |
+| **Hubs** (ringed, labelled) | One per category: Memory, Notes, Skills, Mods, MCP Servers, Agents, Hooks, Reference. Each takes its category's color. |
 | **Memories and notes** (orange, red) | `projects/*/memory/*.md`, the facts Claude saved per project, and the notes index, as bright points on the orb. |
 | **Skills** (amber beads) | Local skills, claude.ai-synced skills and **parked** skills switched off in [Toolbox](#parked-tools), on the inner orbit ring. |
+| **Hooks** (teal beads) | Scripts registered under `hooks` in `settings.json`, one per script, with their events, matchers and timeouts. The commands themselves are never read into the output. They share the inner ring with skills. |
 | **Apps** (blue hex badges) | Mods, marketplace plugins, MCP servers and agents on the outer ring. MCP servers show only a secret-free host or package name. |
 | **Dashed rims** | Parked tools: installed but switched off. They carry no signal pulses. |
 | **Solid / dashed lines** | Structure and `[[wikilinks]]` / mentions of a tool inside a document. Faint in the structured layouts, lit when you hover or select. |
@@ -52,7 +53,7 @@ Claude Code remembers you through plain files in `~/.claude`: your `CLAUDE.md`, 
 | **2D map** | **Force**, **Circle**, **Hex** (honeycomb tiles) and **Rings** (concentric sectors per category, skills and apps on the outer rings). Drag pans. |
 | **Timeline** | One lane per category, placed by last-modified date. Recent weeks get more room than old months. |
 | **Skills** | A deck of every skill ranked by size, with its rough token cost and active/parked state. |
-| **Applications** | MCP servers, mods and agents as hex tiles. Agents kept in subfolders of `~/.claude/agents/` show their folder. |
+| **Applications** | MCP servers, mods, agents and hooks as hex tiles. Agents kept in subfolders of `~/.claude/agents/` show their folder. |
 | **Health** | What to tidy in `~/.claude`, grouped by problem, with a one-line fix for each group. Click a card to open the file. |
 
 The chrome stays minimal: tab pills, search, a Motion toggle with a speed slider, and zoom controls. **Menu** opens a drawer with telemetry, channels, the activity chart, the event log and the runtime readout.
@@ -109,7 +110,7 @@ Requires Node 18.3+. There are no dependencies to install.
 npm run build:demo   # optional: rebuild the bundled demo brain
 npm run build        # scan your own ~/.claude into data.js
 npm run open         # build, then open index.html in your browser
-npm test             # 31 tests: parser, redaction, MCP secrets, odd config files, graph, health, camera, physics, layouts
+npm test             # 33 tests: parser, redaction, MCP and hook secrets, odd config files, graph, health, camera, physics, layouts
 ```
 
 `index.html` opens straight from disk. With no `data.js`, it falls back to the fictional demo brain in [`demo/`](demo/), so a fresh clone works right away.

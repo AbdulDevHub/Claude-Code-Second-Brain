@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { frontmatter, firstHeading } from '../scripts/lib/text.mjs';
 import { createRedactor } from '../scripts/lib/redact.mjs';
 import { BrainGraph, mentionPattern } from '../scripts/lib/graph.mjs';
-import { mcpEndpoint, projectLabel, splitPluginDirs } from '../scripts/lib/sources.mjs';
+import { mcpEndpoint, projectLabel, splitPluginDirs, hookScript } from '../scripts/lib/sources.mjs';
 import { build } from '../scripts/build.mjs';
 
 const DEMO_HOME = fileURLToPath(new URL('../demo/ada', import.meta.url));
@@ -125,6 +125,34 @@ test('demo build: plugin dirs, marketplace plugins, synced skills and parked MCP
   assert.equal(byId.get('skill:deep-research').sub, 'claude.ai');
   assert.equal(byId.get('mcp:figma').active, false);
   assert.equal(byId.get('mcp:github').active, true);
+});
+
+test('hooks: one node per script, merged across events, commands never emitted', () => {
+  const { json, stats, health } = (() => { const r = build({ home: DEMO_HOME }); return { ...r, health: JSON.parse(r.json).health }; })();
+  const hooks = new Map(JSON.parse(json).nodes.filter((n) => n.type === 'hook').map((n) => [n.id, n]));
+  assert.deepEqual(stats.hooks, { total: 4, active: 4 });
+  assert.equal(hooks.get('hook:format-on-save').sub, 'PostToolUse · Stop');
+  assert.equal(hooks.get('hook:block-force-push').file, '~/.claude/hooks/block-force-push.mjs');
+  assert.match(hooks.get('hook:block-force-push').desc, /^PreToolUse guard/);
+  assert.equal(hooks.get('hook:notify-done').missing, true);
+  assert.ok(hooks.has('hook:Notification inline'));
+  assert.deepEqual(health.filter((h) => h.kind === 'missing-script').map((h) => h.id), ['hook:notify-done']);
+  for (const s of ['demo-secret-token-123', 'hunter2', 'say-it', '--final']) assert.ok(!json.includes(s), `leaked ${s}`);
+});
+
+test('hook script detection', () => {
+  const home = '/home/ada';
+  assert.deepEqual(hookScript('node ~/.claude/hooks/guard.mjs', home), { name: 'guard', path: '/home/ada/.claude/hooks/guard.mjs' });
+  assert.equal(hookScript('powershell -File "C:\\Users\\ada\\.claude\\hooks\\sync skills.ps1" -x', home).name, 'sync skills');
+  assert.equal(hookScript('node ~/.claude/skills/free-helpers/helper.mjs models', home).name, 'free-helpers');
+  assert.equal(hookScript('echo done', home), null);
+  // Env-var and relative paths can't be checked, so they must never be reported as missing.
+  assert.deepEqual(hookScript('bash "$CLAUDE_PROJECT_DIR"/.claude/hooks/x.sh', home), { name: 'x', path: null });
+  assert.equal(hookScript('node ${CLAUDE_PLUGIN_ROOT}/hooks/y.mjs', home).path, null);
+  assert.equal(hookScript('bash ./hooks/z.sh', home).path, null);
+  assert.equal(hookScript('node $HOME/.claude/hooks/ok.mjs', home).path, '/home/ada/.claude/hooks/ok.mjs');
+  // The folder-name fallback only applies inside ~/.claude, where a parent folder can't be a username.
+  assert.equal(hookScript('node /home/ada/index.js', home).name, 'index');
 });
 
 test('agents in subfolders load like Claude Code loads them; kit files without frontmatter do not', () => {

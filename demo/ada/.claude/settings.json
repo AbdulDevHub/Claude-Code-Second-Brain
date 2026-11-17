@@ -2,6 +2,21 @@
   "env": {
     "CLAUDE_CODE_PLUGIN_DIRS": "C:\\Users\\ada\\.claude\\plugins\\focus-mode"
   },
+  "hooks": {
+    "PreToolUse": [
+      { "matcher": "Bash", "hooks": [{ "type": "command", "command": "node ~/.claude/hooks/block-force-push.mjs --token demo-secret-token-123", "timeout": 10 }] }
+    ],
+    "PostToolUse": [
+      { "matcher": "Edit|Write", "hooks": [{ "type": "command", "command": "node ~/.claude/hooks/format-on-save.mjs" }] }
+    ],
+    "Stop": [
+      { "hooks": [{ "type": "command", "command": "node ~/.claude/hooks/format-on-save.mjs --final", "async": true }] },
+      { "hooks": [{ "type": "command", "command": "bash ~/.claude/hooks/notify-done.sh" }] }
+    ],
+    "Notification": [
+      { "hooks": [{ "type": "command", "command": "echo hunter2 | say-it" }] }
+    ]
+  },
   "enabledPlugins": {
     "prettier-hooks@community": true,
     "jira-sync@atlassian": false

@@ -31,6 +31,7 @@
     pen: 'M4 20l4-1 11-11-3-3L5 16zM14 6l3 3',
     chart: 'M4 20V10M10 20V4M16 20v-7M22 20H2',
     check: 'M4 12l5 5L20 6',
+    hook: 'M14 3v11a5 5 0 0 1-10 0v-2l3 2 M14 3h4',
   };
 
   // First match wins, tested against "label id" in lower case. Type defaults come after.
@@ -60,11 +61,11 @@
     [/terminal|\bcli\b|shell|bash|setup|init/, 'terminal'],
     [/brainstorm|architect|plan|idea/, 'sparkle'],
   ];
-  const BY_TYPE = { skill: 'bolt', mod: 'box', mcp: 'plug', agent: 'bot', group: 'folder', hub: 'sparkle', core: 'sparkle' };
+  const BY_TYPE = { skill: 'bolt', mod: 'box', mcp: 'plug', agent: 'bot', hook: 'hook', group: 'folder', hub: 'sparkle', core: 'sparkle' };
 
   function glyphFor(n) {
     const text = `${n.label || ''} ${n.id || ''}`.toLowerCase();
-    if (n.type === 'skill' || n.type === 'mod' || n.type === 'mcp' || n.type === 'agent') {
+    if (n.type === 'skill' || n.type === 'mod' || n.type === 'mcp' || n.type === 'agent' || n.type === 'hook') {
       for (const [re, key] of RULES) if (re.test(text)) return key;
     }
     return BY_TYPE[n.type] || 'sparkle';
