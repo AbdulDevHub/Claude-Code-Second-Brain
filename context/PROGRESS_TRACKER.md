@@ -10,7 +10,7 @@ When old log entries stop being useful, fold them into the "Earlier history" par
 - Decorative dust (6,500 points on desktop, 4,000 on phones) morphs between layouts. Tools are drawn as hex badges or bead badges with line icons.
 - Old HUD panels (telemetry, channels, activity, event log, runtime) live in the Menu drawer. The last view is saved in localStorage.
 - Health deck (tab) and a HEALTH telemetry row: build-time checks for unindexed memories, broken links, missing descriptions, stale (120+ days), plus info-only orphans and parked tools. Copy buttons in the data sheet.
-- 30 tests pass (`npm test`). README screenshots were refreshed for v2.
+- 31 tests pass (`npm test`). README screenshots were refreshed for v2.
 
 ## In progress
 - Nothing active.
@@ -18,6 +18,7 @@ When old log entries stop being useful, fold them into the "Earlier history" par
 ## Next steps
 - Measure FPS on a real GPU browser. The headless test browser ran at 30–40 fps with 6,500 dust points; lower `DUST_COUNT` in `app.js` if needed.
 - Decide whether the Skills and Applications decks should respect the Menu channel filters (right now they ignore them).
+- Hooks aren't scanned (audit 2026-11-17): `settings.json` `hooks` (5 events) and `~/.claude/hooks/*` scripts. They'd need a new node type (color, glyph, filter, layout sector). The best next "OS" addition.
 - Possible Routines tab if scheduled-task data is ever scanned (the reference has one; skipped for lack of data).
 - Panning a 2D view while a node is selected snaps back to the node on release; consider clearing the follow on pan.
 - Publish: create the public GitHub repo, enable Pages (main, root), set the About description, topics and social preview image.
@@ -27,6 +28,9 @@ When old log entries stop being useful, fold them into the "Earlier history" par
 - Decided against renaming to "Agentic OS": the app only views `~/.claude` and can't run anything. The name stays, and it stays static and read-only.
 - Added `scripts/lib/health.mjs`. `graph.mjs` now records `unresolved` and `refs`, and skips `[[links]]` inside code. Added a Health deck, a HEALTH telemetry row and copy pills, plus the demo fixture `offline-mode.md` (untidy on purpose) and `test/health.test.mjs`.
 - Routines tab is still skipped: there's no local scheduled-task data.
+- Agents are now scanned recursively, like Claude Code loads them: any `.md` under `agents/` that starts with `---` frontmatter, with `sub` set to its folder. This picked up the 3 `studio/` agents. Demo fixture: `agents/design/designer.md`, plus a kit README that must not load.
+- Audit of `~/.claude` vs the scan: hooks are missing (see Next steps). `dev-mods/` holds per-session dev copies, so it isn't scanned. `jobs/`, `plans/` and `sessions/` are runtime data, not knowledge.
+- Added `docs/screenshots/health.png` to the README.
 
 ### 2026-11-06 — social preview image
 - Added a 1200×630 share card `docs/og-image.png` (brand, headline, orb crop from `screenshots/hero.png`); its source is `docs/og-template.html`. `og:image`/`twitter:image` now point to it.

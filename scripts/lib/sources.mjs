@@ -212,15 +212,27 @@ function scanMods(g, ctx) {
   }
 }
 
-// ---------- agents/*.md: sub-agents ----------
-function scanAgents(g, ctx) {
-  const dir = join(ctx.claude, 'agents');
-  for (const f of ls(dir).filter((f) => f.endsWith('.md'))) {
+// ---------- agents/**/*.md: sub-agents ----------
+// Claude Code loads agents from every subfolder, and any .md there that starts with `---` frontmatter
+// counts as one. Kit files (READMEs, templates) without leading frontmatter are skipped, like Claude Code does.
+function agentFiles(dir, rel = '', depth = 0) {
+  const out = [];
+  for (const f of ls(dir)) {
+    if (f.startsWith('.') || f === 'node_modules') continue;
     const path = join(dir, f);
-    const { meta, body } = frontmatter(read(path));
-    const name = meta.name || f.replace(/\.md$/, '');
+    if (isDir(path)) { if (depth < 6) out.push(...agentFiles(path, `${rel}${f}/`, depth + 1)); }
+    else if (f.endsWith('.md')) out.push({ path, rel: rel + f, folder: rel.replace(/\/$/, '') });
+  }
+  return out;
+}
+function scanAgents(g, ctx) {
+  for (const { path, rel, folder } of agentFiles(join(ctx.claude, 'agents'))) {
+    const text = read(path).replace(/^﻿/, '');
+    if (!text.startsWith('---')) continue;
+    const { meta, body } = frontmatter(text);
+    const name = meta.name || rel.split('/').pop().replace(/\.md$/, '');
     const id = g.addNode(`agent:${name}`, {
-      label: name, type: 'agent', file: `~/.claude/agents/${f}`, body, mtime: mtime(path), desc: meta.description, model: meta.model, active: true,
+      label: name, type: 'agent', sub: folder || undefined, file: `~/.claude/agents/${rel}`, body, mtime: mtime(path), desc: meta.description, model: meta.model, active: true,
     });
     g.link('hub:agent', id);
     g.register(id, { path, slugs: [name] });

@@ -127,6 +127,16 @@ test('demo build: plugin dirs, marketplace plugins, synced skills and parked MCP
   assert.equal(byId.get('mcp:github').active, true);
 });
 
+test('agents in subfolders load like Claude Code loads them; kit files without frontmatter do not', () => {
+  const { nodes } = JSON.parse(build({ home: DEMO_HOME }).json);
+  const agents = nodes.filter((n) => n.type === 'agent');
+  const designer = agents.find((n) => n.id === 'agent:designer');
+  assert.equal(designer?.sub, 'design');
+  assert.equal(designer.file, '~/.claude/agents/design/designer.md');
+  assert.ok(!agents.some((n) => /README/i.test(n.id)), 'kit README is not an agent');
+  assert.equal(agents.length, 3);
+});
+
 test('odd but valid files never crash the build', () => {
   const home = mkdtempSync(join(tmpdir(), 'brain-'));
   const claude = join(home, '.claude');
