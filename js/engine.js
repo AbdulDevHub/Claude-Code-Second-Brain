@@ -101,10 +101,10 @@
   // Orbits a target point. Every property eases toward its `goal`, so fly-to, zoom and auto-rotate are just goal changes.
   class OrbitCamera {
     constructor() {
-      this.yaw = 0.6; this.pitch = -0.42; this.dist = 2600; this.focal = 900;
+      this.yaw = 0.6; this.pitch = 0.42; this.dist = 2600; this.focal = 900;
       this.tx = 0; this.ty = 0; this.tz = 0;
       this.cx = 0; this.cy = 0; // screen-space center of the view
-      this.goal = { yaw: 0.6, pitch: -0.42, dist: 1100, tx: 0, ty: 0, tz: 0, cx: 0, cy: 0 };
+      this.goal = { yaw: 0.6, pitch: 0.42, dist: 1100, tx: 0, ty: 0, tz: 0, cx: 0, cy: 0 };
       this.minDist = 140; this.maxDist = 3200;
     }
 

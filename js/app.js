@@ -8,6 +8,7 @@ function startSecondBrain(isDemo) {
   }
   const { Physics, OrbitCamera } = window.NeuralEngine;
   const Layouts = window.NeuralLayouts;
+  const Sfx = window.NeuralSfx || { play() {}, setEnabled() {} }; // sound is optional
   const TAU = Math.PI * 2;
 
   // Warm palette: knowledge in oranges and reds, tools that reach outside (mods, MCP, agents) in cool accents.
@@ -152,10 +153,11 @@ function startSecondBrain(isDemo) {
 
   // ---------- views and layouts ----------
   const PREF_KEY = 'second-brain:view';
-  const prefs = { view: 'orbs', sub: { orbs: 'orb', map: 'rings' } };
+  const prefs = { view: 'orbs', sub: { orbs: 'orb', map: 'rings' }, sound: true };
   try {
     const saved = JSON.parse(localStorage.getItem(PREF_KEY) || '{}');
     if (typeof saved.view === 'string') prefs.view = saved.view;
+    if (typeof saved.sound === 'boolean') prefs.sound = saved.sound;
     if (saved.sub && typeof saved.sub === 'object') for (const k of ['orbs', 'map']) if (typeof saved.sub[k] === 'string') prefs.sub[k] = saved.sub[k];
   } catch { /* storage blocked or malformed */ }
   const savePrefs = () => { try { localStorage.setItem(PREF_KEY, JSON.stringify(prefs)); } catch { /* storage blocked */ } };
@@ -164,6 +166,7 @@ function startSecondBrain(isDemo) {
   function setLayout(name) {
     if (name === layout || !Layouts.names.includes(name)) return;
     const wasFlat = state.flat, first = layout === null;
+    if (!first) Sfx.play('morph');
     layout = name;
     state.layout = name;
     const res = Layouts.build(name, layoutCtx, DUST_COUNT);
@@ -184,7 +187,7 @@ function startSecondBrain(isDemo) {
       if (!first) physics.reheat(1);
     }
     if (state.flat) { cam.goal.yaw = Math.round(cam.goal.yaw / TAU) * TAU; cam.goal.pitch = 0; }
-    else if (wasFlat || first) cam.goal.pitch = -0.46;
+    else if (wasFlat || first) cam.goal.pitch = 0.46;
     if (!state.selected) recenter();
   }
 
@@ -412,6 +415,7 @@ function startSecondBrain(isDemo) {
     if (state.hovered === n) return;
     state.hovered = n;
     if (!n || isPhone()) { tooltip.hidden = true; state.tooltipAt = null; return; }
+    Sfx.play('hover', n);
     tooltip.style.setProperty('--c', n.color);
     tooltip.innerHTML = `<div class="t">${esc(TYPE_NAMES[n.type]).toUpperCase()}${n.sub && n.sub !== 'memory' ? ' · ' + esc(n.sub).toUpperCase() : ''}</div><strong>${esc(n.label)}</strong>${n.desc ? `<span>${esc(truncate(n.desc, 110))}</span>` : ''}`;
     tooltip.hidden = false;
@@ -471,6 +475,7 @@ function startSecondBrain(isDemo) {
   function select(n) {
     if (!n) return;
     if (!n.visibleNow) { for (const f of FILTERS) if (f.dormant ? n.active === false : f.types.includes(n.channel)) hidden.delete(f.key); refreshVisibility(); renderFilters(); }
+    if (state.selected !== n) Sfx.play('select', n);
     state.selected = n;
     setHover(null);
     fitting = false;
@@ -526,6 +531,7 @@ function startSecondBrain(isDemo) {
 
   function closePanel() {
     if (!state.selected) return;
+    Sfx.play('close');
     state.selected = null;
     panel.classList.remove('open');
     panel.setAttribute('aria-hidden', 'true');
@@ -700,10 +706,16 @@ function startSecondBrain(isDemo) {
   const syncOrbitBtn = () => { orbitBtn.classList.toggle('on', autoOrbit); orbitBtn.setAttribute('aria-pressed', String(autoOrbit)); };
   orbitBtn.addEventListener('click', () => { autoOrbit = !autoOrbit; lastInteract = 0; syncOrbitBtn(); });
   syncOrbitBtn();
+  const soundBtn = $('#sound');
+  const syncSoundBtn = () => { soundBtn.classList.toggle('on', prefs.sound); soundBtn.setAttribute('aria-pressed', String(prefs.sound)); };
+  Sfx.setEnabled(prefs.sound); syncSoundBtn();
+  soundBtn.addEventListener('click', () => { prefs.sound = !prefs.sound; Sfx.setEnabled(prefs.sound); syncSoundBtn(); savePrefs(); });
+  // A soft tap for every other button in the HUD.
+  document.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b && b !== soundBtn) Sfx.play('tap'); });
   speed.addEventListener('input', () => { state.motion = Number(speed.value) / 100; });
   $('#recenter').addEventListener('click', () => {
     if (state.selected) closePanel(); else recenter();
-    cam.goal.pitch = state.flat ? 0 : -0.46;
+    cam.goal.pitch = state.flat ? 0 : 0.46;
     state.highlight = null; activeDay = null; renderActivity();
     input.value = ''; state.searchHits = null; results.hidden = true;
   });

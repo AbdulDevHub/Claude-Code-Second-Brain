@@ -19,6 +19,7 @@ Read before touching the build, layouts or renderer. Update when a layer, data f
   - Branch kinds: `inner` (knowledge hubs), `bead` (skills, hooks), `app` (mods, MCP, agents, models). Kinds only weight sectors in Circle/Hex now; Orb and Rings treat every branch alike (hubs on one ring by `hubAngles`, marked by `markDotsAndRing`). Orb deals items into wedges with `dealWedges`; Rings keeps `sectorize` sizes (sqrt of active item count), builds one row lattice per wedge and gives items evenly spread slots of it (active in the bright rows, parked/unused in the faint rim), the dust taking the rest.
 - **engine.js:** `Physics` (d3-force style in 3D; `flat` decays z) and `OrbitCamera` (goal-easing; `project`, `rotate`, `unprojectDelta`).
 - **renderer.js:** draw order is stars → dust → captions → links → nodes → labels → reticles. Dust is stored as typed arrays, morphed from the previous cloud (`setDust`, `burst`) and bucketed by color × brightness. Glow, body, spark and badge sprites are cached once per key.
+- **sfx.js:** `window.NeuralSfx` (`play(name, node)`, `setEnabled`). Sounds are synthesized per call (oscillators + one cached noise buffer) into a compressor and master gain; nothing plays before the first pointer or key press. app.js falls back to a no-op if it is missing.
 - **glyphs.js:** `PATHS` (24×24 stroke icons) and `glyphFor(node)` (name regex rules, then a type fallback).
 
 ## Camera modes

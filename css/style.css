@@ -47,6 +47,8 @@ body.deck-open #graph { opacity: 0.22; pointer-events: none; }
 .pill.accent.on { color: #ffd2bd; background: rgba(255, 106, 43, 0.14); box-shadow: inset 0 0 14px rgba(255, 106, 43, 0.15); }
 .pill .sq { width: 7px; height: 7px; border-radius: 2px; background: currentColor; box-shadow: 0 0 8px currentColor; }
 .pill.icon { width: 34px; padding: 0; }
+#sound .mute, #sound.on .wave { display: inline; }
+#sound .wave, #sound.on .mute { display: none; }
 .pill svg, .search svg, .tabs svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
 .tabs, .subtabs, .seg { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: calc(var(--radius) + 2px); background: rgba(10, 9, 8, 0.92); }
@@ -410,6 +412,7 @@ body.panel-open .deck { left: calc((100vw - var(--panel-w) - 44px) / 2); width: 
   .nav-row .tabs::-webkit-scrollbar { display: none; }
   .tabs .tab { flex: 1 0 auto; padding: 0 7px; font-size: 12px; }
   #recenter { order: 3; margin-left: auto; }
+  #sound { order: 4; }
   .search { width: 100%; }
   .subtabs { align-self: stretch; }
   .subtabs .tab { flex: 1; }

@@ -23,6 +23,10 @@ When old log entries stop being useful, fold them into the "Earlier history" par
 - Publish: create the public GitHub repo, enable Pages (main, root), set the About description, topics and social preview image.
 
 ## Session log
+### 2026-11-17 — orb camera, sound effects, refreshed images
+- Orb camera: the default pitch was negative, so the hub ring was seen from below (far side low and small, near side high). Default and reset pitch are now +0.42/+0.46 (from above): the nearest hubs sit at the bottom and look biggest.
+- Sound: `js/sfx.js` synthesizes cues with Web Audio (tap on any HUD button, hover tick, a two-note chime per node type on select, a falling blip on close, a whoosh on layout change). Silent until the first pointer or key press. Speaker pill `#sound` next to Motion; `prefs.sound` is saved with the view.
+- `index.html?demo` skips `data.js` and shows the demo brain (for screenshots). README `hero.png`, `rings.png` and `docs/og-image.png` re-shot with it.
 ### 2026-11-17 — Rings lattice and model catalog
 - Rings: items no longer sit on a separate Vogel spiral. Wedges keep the square-root `sectorize` size, which now counts only active items (so unused catalog models fill the Models wedge instead of widening it). Active items take the bright rows, parked/unused ones the faint rim (rows past 0.8, spilling inward when full); a crowded wedge gets a finer grid. Each wedge gets one lattice of 24 concentric rows (0.4–0.92 R), items take evenly spread slots and the dust fills the rest, so real nodes read as the grid's own dots.
 - Models: `MODEL_CATALOG` in `text.mjs` (Claude families + Gemini Flash/Pro, Gemma, ChatGPT Luna, GPT, Grok, Llama, DeepSeek, Qwen, Mistral, Kimi, GLM, Nemotron, Laguna). Every entry is a node; active when named (settings, agent/skill `model:`, mentions) or listed in `helpers/config.json` aliases (FreeLLMAPI, `from` set; the key is never read out, tested with a demo fake key). `stats.models` is now `{active,total}`. Drawer says INACTIVE for unused models; the dormant filter is "Parked & unused". ChatGPT Luna is active via a line added to `~/.claude/notes/local-tools-inventory.md`. On your data: 11/18 active.

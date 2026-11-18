@@ -88,6 +88,7 @@
         </div>
         <nav class="tabs" id="tabs" aria-label="Views"></nav>
         <button id="recenter" class="pill icon" aria-label="Reset view" title="Reset view"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5"/></svg></button>
+        <button id="sound" class="pill icon on" aria-pressed="true" aria-label="Sound effects" title="Sound effects"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="wave" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><path class="mute" d="M16 9l6 6M22 9l-6 6"/></svg></button>
       </div>
       <div class="search">
         <label><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM21 21l-5-5"/></svg><input id="search" type="search" placeholder="Search the brain…" autocomplete="off" spellcheck="false" aria-label="Search the brain"></label>
@@ -164,11 +165,13 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js" integrity="sha384-/TQbtLCAerC3jgaim+N78RZSDYV7ryeoBCVqTuzRrFec2akfBkHS7ACQ3PQhvMVi" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" integrity="sha384-+VfUPEb0PdtChMwmBcBmykRMDd+v6D/oFmB3rZM/puCMDYcIvF968OimRh4KQY9a" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="data.js"></script>
+  <!-- ?demo skips your data.js and shows the bundled demo brain (used for README screenshots). -->
+  <script>if (!/[?&]demo\b/.test(location.search)) document.write('<script src="data.js"><\/script>');</script>
   <script src="js/engine.js"></script>
   <script src="js/glyphs.js"></script>
   <script src="js/layouts.js"></script>
   <script src="js/renderer.js"></script>
+  <script src="js/sfx.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

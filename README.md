@@ -72,7 +72,8 @@ The chrome stays minimal: tab pills, search, a Motion toggle with a speed slider
 - **Health check.** Computed at build time, so public builds get it too: memories missing from their `MEMORY.md` index, `[[links]]` to files that don't exist (examples inside code are ignored), missing descriptions, notes with no links, files untouched for 120+ days, and parked tools.
 - **Parked tools.** Skills, mods and MCP servers switched off in Toolbox still appear with dashed rims, so the brain shows everything installed.
 - **Menu drawer.** Telemetry with active/total counts, channel filters, a 30-day activity chart (click a day to light up what changed), an event log and a runtime readout.
-- **Remembers your view.** The last tab and layout come back on the next visit.
+- **Sound effects.** Soft synthesized cues for hovering, opening and closing nodes, switching views and pressing buttons (Web Audio, no audio files). The speaker pill next to Motion mutes them.
+- **Remembers your view.** The last tab, layout and sound setting come back on the next visit.
 - **Boot sequence.** A terminal-style cold start that reports what the scanner found, then the camera dives in.
 - **System screen.** An in-app architecture overview for anyone curious how it works.
 - **Privacy by construction.** Ordered redaction rules scrub emails, usernames and home paths. The build **fails** if anything personal survives, and MCP headers, env vars and arguments are never read into the output.
@@ -99,6 +100,7 @@ The chrome stays minimal: tab pills, search, a Motion toggle with a speed slider
 | [`js/glyphs.js`](js/glyphs.js) | Line icons for tool badges, picked from a tool's name with a per-type fallback. |
 | [`js/engine.js`](js/engine.js) | The d3-force model rebuilt for 3D (with a flat mode for the 2D force map): many-body repulsion, Hooke springs with degree bias, gravity, soft collisions and alpha cooling. Also an orbit camera where every property eases toward a goal. |
 | [`js/renderer.js`](js/renderer.js) | Starfield, the dust cloud (morphed point by point and batched by color and brightness), synapses with travelling pulses, glowing knowledge nodes, hex and bead badges, and the sparkle core. Glows, badges and icons are pre-rendered once and stamped with additive blending. Labels are placed greedily with overlap culling. |
+| [`js/sfx.js`](js/sfx.js) | Sound effects synthesized with Web Audio: enveloped tones (a note per node type) and a filtered-noise whoosh for view changes. Silent until the first click, as browsers require. |
 | [`js/app.js`](js/app.js) | HUD wiring: views and layouts, pointer and touch input, data sheet with copy buttons, skills, apps and health decks, menu drawer, filters, search, activity chart, boot sequence. |
 
 **Performance notes.** Nodes and links are created with one fixed shape so V8 keeps property access monomorphic, which made the physics loop about 7x faster. Sprites replace per-frame gradients, stars and dust are batched by color and brightness into a few dozen fills per frame, and the HUD skips `backdrop-filter`, since a blur over a live canvas halves the frame rate.
@@ -140,6 +142,7 @@ js/layouts.js         orb, circle, hex, rings and timeline layouts + dust
 js/glyphs.js          badge icons
 js/engine.js          3D physics + orbit camera (no dependencies)
 js/renderer.js        Canvas 2D renderer
+js/sfx.js             synthesized sound effects
 js/app.js             HUD wiring and interaction
 scripts/build.mjs     CLI entry: scan, redact, leak-check, write data.js
 scripts/lib/          text helpers, redaction, graph, scanners
