@@ -8,13 +8,13 @@ Use these instead of new ad-hoc colors. Update this file when a token changes in
 |---|---|---|
 | `--bg` | `#000` | page and canvas background |
 | `--orange` | `#ff6a2b` | primary accent, view name, memory nodes |
-| `--orange-soft` | `#ff8a3d` | projects, bead-ring dust in 2D Rings and the orb's hub ring (`RING` in layouts.js) |
+| `--orange-soft` | `#ff8a3d` | projects, hub-ring dust in the Orb and Rings views (`RING` in layouts.js) |
 | `--red` | `#ff3b30` | notes |
 | `--amber` | `#ffb347` | skills, parked status text |
-| `--blue` | `#3aa0ff` | MCP servers, app-ring dust |
+| `--blue` | `#3aa0ff` | MCP servers |
 | `--text` / `--muted` / `--dim` | `#f4ece6` / `#9a8b80` / `#5c4f46` | text levels |
 | `--line` | `rgba(255,255,255,.1)` | borders on pills, cards, panels |
-| node-only | mod `#4fd8ff`, agent `#9d8cff`, reference `#ffd166`, section `#ffe8d6`, core `#ffffff` | category colors in `COLORS` |
+| node-only | mod `#4fd8ff`, agent `#9d8cff`, hook `#2ee6b8`, model `#ff7ac8`, reference `#ffd166`, section `#ffe8d6`, core `#ffffff` | category colors in `COLORS` |
 | status | active `#5dff9b`, parked = amber | data sheet, decks |
 
 Hub nodes take the color of the category they head (`HUB_COLOR` in app.js).

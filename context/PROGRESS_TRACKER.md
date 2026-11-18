@@ -5,12 +5,12 @@ Update "Current state", "In progress" and "Next steps" after meaningful changes,
 When old log entries stop being useful, fold them into the "Earlier history" paragraph instead of deleting them.
 
 ## Current state
-- Build pipeline: scans `~/.claude` (CLAUDE.md, memory, notes, skills incl. parked/claude.ai, mods, plugins, agents incl. subfolders, MCP, hooks, reference) into `data.js`, with redaction and a leak check that fails the build.
+- Build pipeline: scans `~/.claude` (CLAUDE.md, memory, notes, skills incl. parked/claude.ai, mods, plugins, agents incl. subfolders, MCP, hooks, reference, models) into `data.js`, with redaction and a leak check that fails the build.
 - v2 look (warm orange on black, after the `V2 Upgrade/` reference): tabs for 3D orbs (Orb, Neural), 2D map (Force, Circle, Hex, Rings), Timeline, Skills deck and Applications deck.
 - Decorative dust (6,500 points on desktop, 4,000 on phones) morphs between layouts. Tools are drawn as hex badges or bead badges with line icons.
 - Old HUD panels (telemetry, channels, activity, event log, runtime) live in the Menu drawer. The last view is saved in localStorage.
 - Health deck (tab) and a HEALTH telemetry row: build-time checks for unindexed memories, broken links, missing descriptions, stale (120+ days), plus info-only orphans and parked tools. Copy buttons in the data sheet.
-- 34 tests pass (`npm test`). README screenshots were refreshed for v2.
+- 37 tests pass (`npm test`). README screenshots were refreshed for v2.
 
 ## In progress
 - Nothing active.
@@ -23,6 +23,12 @@ When old log entries stop being useful, fold them into the "Earlier history" par
 - Publish: create the public GitHub repo, enable Pages (main, root), set the About description, topics and social preview image.
 
 ## Session log
+### 2026-11-17 — Rings lattice and model catalog
+- Rings: items no longer sit on a separate Vogel spiral. Wedges are sized by item count; each wedge gets one lattice of 24 concentric rows (0.4–0.92 R), items take evenly spread slots and the dust fills the rest, so real nodes read as the grid's own dots.
+- Models: `MODEL_CATALOG` in `text.mjs` (Claude families + Gemini Flash/Pro, Gemma, ChatGPT Luna, GPT, Grok, Llama, DeepSeek, Qwen, Mistral, Kimi, GLM, Nemotron, Laguna). Every entry is a node; active when named (settings, agent/skill `model:`, mentions) or listed in `helpers/config.json` aliases (FreeLLMAPI, `from` set; the key is never read out, tested with a demo fake key). `stats.models` is now `{active,total}`. Drawer says INACTIVE for unused models; the dormant filter is "Parked & unused". ChatGPT Luna is active via a line added to `~/.claude/notes/local-tools-inventory.md`. On your data: 11/18 active.
+### 2026-11-17 — Models category and tidy Rings map
+- Models: `scanModels` in `sources.mjs` adds `hub:model` and one `model:<family>` node per family (fable, opus, sonnet, haiku) that something names: `settings.model` (sub `default`, linked to the core), an agent's or skill's `model:` (`link`), or a capitalised mention / `claude-<family>` in sections, memories, notes, reference or project indexes (`mention`). `modelFamily` lives in `text.mjs`. Skills now keep `model` from frontmatter. New health kind `unknown-model` (warn). Pink `#ff7ac8`, chip glyph, MODELS telemetry row, Models channel. Demo: `model: opus` in settings and a Haiku line in WORKFLOW.md. On your data: Opus (default, 2 agents), Sonnet (5 agents), Fable and Haiku (mentions).
+- Rings (2D) redone like the orb: every item as a uniform dot on a Vogel spiral in the 0.4–0.92 R annulus, dealt into colored wedges; hubs as hex badges on a 1.12 R ring; labels on hover. The orb and rings share `dealWedges`, `hubAngles` and `markDotsAndRing` in `layouts.js`. Force, Circle, Hex and Timeline are unchanged.
 ### 2026-11-17 — health checks and copy buttons
 - Decided against renaming to "Agentic OS": the app only views `~/.claude` and can't run anything. The name stays, and it stays static and read-only.
 - Added `scripts/lib/health.mjs`. `graph.mjs` now records `unresolved` and `refs`, and skips `[[links]]` inside code. Added a Health deck, a HEALTH telemetry row and copy pills, plus the demo fixture `offline-mode.md` (untidy on purpose) and `test/health.test.mjs`.

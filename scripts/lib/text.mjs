@@ -19,7 +19,41 @@ export const ls = (path) => (existsSync(path) ? readdirSync(path) : []);
 export const isDir = (path) => existsSync(path) && statSync(path).isDirectory();
 export const mtime = (path) => statSync(path).mtimeMs;
 export const titleCase = (s) => s.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-export const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+/** Claude model families, newest naming first. */
+export const MODEL_FAMILIES = ['fable', 'opus', 'sonnet', 'haiku'];
+/**
+ * Family of a `model:` value ("opus", "claude-sonnet-4-5", "opusplan", "sonnet[1m]").
+ * null when it defers to the session ("inherit", "default", empty); undefined when it names no known family.
+ */
+export function modelFamily(value) {
+  const v = String(value ?? '').trim().toLowerCase();
+  if (!v || v === 'inherit' || v === 'default') return null;
+  return MODEL_FAMILIES.find((f) => v.includes(f));
+}
+/**
+ * Every model the Models hub knows. Claude families come first and match a capitalised name or `claude-<family>`;
+ * the rest match their usual spellings. Models nothing names still appear, as inactive.
+ */
+export const MODEL_CATALOG = [
+  ...MODEL_FAMILIES.map((id) => ({ id, label: titleCase(id), maker: 'Anthropic', match: new RegExp(`(^|[^\\w-])(${titleCase(id)}|claude-${id})(?![\\w-])`) })),
+  { id: 'gemini-flash', label: 'Gemini Flash', maker: 'Google', match: /\bgemini[- ](?:[\d.]+[- ])?flash\b|\bgemini-flash\b/i },
+  { id: 'gemini-pro', label: 'Gemini Pro', maker: 'Google', match: /\bgemini[- ](?:[\d.]+[- ])?pro\b/i },
+  { id: 'gemma', label: 'Gemma', maker: 'Google', match: /\bgemma[\d.]*\b/i },
+  { id: 'gpt-luna', label: 'ChatGPT Luna', maker: 'OpenAI', match: /\b(?:chat)?gpt[- ]luna\b/i },
+  { id: 'gpt', label: 'GPT', maker: 'OpenAI', match: /\bgpt-\d|\bo[34]-mini\b/i },
+  { id: 'grok', label: 'Grok', maker: 'xAI', match: /\bgrok(?:[- ]\d[\w.]*)?\b/i },
+  { id: 'llama', label: 'Llama', maker: 'Meta', match: /\bllama[- ]?\d/i },
+  { id: 'deepseek', label: 'DeepSeek', maker: 'DeepSeek', match: /\bdeepseek\b/i },
+  { id: 'qwen', label: 'Qwen', maker: 'Alibaba', match: /\bqwen[\d.]*/i },
+  { id: 'mistral', label: 'Mistral', maker: 'Mistral AI', match: /\bmistral\b|\bcodestral\b/i },
+  { id: 'kimi', label: 'Kimi', maker: 'Moonshot', match: /\bkimi\b/i },
+  { id: 'glm', label: 'GLM', maker: 'Zhipu', match: /\bglm-\d/i },
+  { id: 'nemotron', label: 'Nemotron', maker: 'NVIDIA', match: /\bnemotron\b/i },
+  { id: 'laguna', label: 'Laguna', maker: 'Poolside', match: /\b(?:poolside-)?laguna\b/i },
+];
+/** Catalog entry a model id or name belongs to ("qwen3.8-27b" → Qwen), or undefined. */
+export const catalogModel = (value) => MODEL_CATALOG.find((m) => m.match.test(String(value ?? '')) || String(value ?? '').toLowerCase().includes(m.id));
+export const escapeRegExp =(s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /** First `# Heading` of a markdown document, without a trailing "(...)" aside. */
 export const firstHeading = (text) => text.match(/^# (.+)/m)?.[1].replace(/\s*\(.*\)$/, '').trim();

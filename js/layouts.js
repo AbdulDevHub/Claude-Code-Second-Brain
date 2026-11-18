@@ -6,8 +6,8 @@
 (() => {
   const TAU = Math.PI * 2;
   const GOLDEN = 2.399963229728653;
-  const BEAD_HUBS = new Set(['hub:skill', 'hub:hook']); // skills and hooks share the inner orbit ring as round beads
-  const APP_HUBS = new Set(['hub:mod', 'hub:mcp', 'hub:agent']);
+  const BEAD_HUBS = new Set(['hub:skill', 'hub:hook']); // branch kinds still weight sectors in the other layouts
+  const APP_HUBS = new Set(['hub:mod', 'hub:mcp', 'hub:agent', 'hub:model']);
   const WHITE = '#fff1e0', RING = '#ff8a3d', BLUE = '#3aa0ff';
 
   // Small seeded PRNG (mulberry32) so every layout looks the same on every load.
@@ -121,7 +121,39 @@
       at(n, Math.cos(a) * r, Math.sin(a) * r, 0);
     });
   }
-  const runOf = (ctx, kind) => ctx.branches.filter((b) => b.kind === kind).flatMap((b) => (b.hub ? [b.hub, ...b.items] : b.items));
+
+  // ---------- shared by orb and rings: item dots dealt into wedges, hubs on one ring ----------
+  // `pts` are lattice points with an angle `a` (radians from `base`). They are sorted by angle and dealt to the
+  // branches in order, so each branch owns a wedge (its a0/a1 are set to match, for the dust colors) and sub-folders
+  // stay next to their contents. `place(node, point)` writes the target.
+  const BASE = -Math.PI / 2;
+  function dealWedges(list, pts, place) {
+    pts.sort((p, q) => p.a - q.a);
+    const N = pts.length;
+    let k = 0, prevEnd = 0;
+    for (const b of list) {
+      const first = k;
+      for (const n of b.items) place(n, pts[k++]);
+      const lastA = k > first ? pts[k - 1].a : prevEnd, firstA = k > first ? pts[first].a : prevEnd;
+      b.a0 = BASE + (first === 0 ? 0 : (prevEnd + firstA) / 2);
+      b.a1 = BASE + (k >= N ? TAU : (lastA + pts[k].a) / 2);
+      prevEnd = lastA;
+    }
+    for (let i = 1; i < list.length; i++) list[i].a0 = list[i - 1].a1; // contiguous even when a branch is empty
+  }
+  // Angles for the hubs: evenly spaced in wedge order, the whole ring turned so each hub sits as close to its wedge as it can.
+  function hubAngles(hubs) {
+    const even = hubs.map((_, i) => ((i + 0.5) / hubs.length) * TAU);
+    let sx = 0, sy = 0;
+    hubs.forEach((b, i) => { const dlt = (b.a0 + b.a1) / 2 - BASE - even[i]; sx += Math.cos(dlt); sy += Math.sin(dlt); });
+    const turn = Math.atan2(sy, sx);
+    return even.map((e) => BASE + e + turn);
+  }
+  // Items as plain dots (`shell`) and hubs as hex badges (`ring`); the renderer reads both sets.
+  function markDotsAndRing(list, out) {
+    out.shell = new Set(list.flatMap((b) => b.items.map((n) => n.id)));
+    out.ring = new Set(list.filter((b) => b.hub).map((b) => b.hub.id));
+  }
 
   // ---------- 3D: orb ----------
   // Every item (knowledge, skills, hooks, mods, MCP servers, agents) as evenly spread dots on a dotted sphere,
@@ -138,42 +170,20 @@
     // (colored to match in the dust below) and sub-folders stay next to their contents. As more nodes arrive the
     // lattice just gets denser. The branch hubs leave the sphere for the ring, each roughly beside its wedge.
     const inner = branches;
-    const base = -Math.PI / 2;
-    const surface = inner.flatMap((b) => b.items);
-    const shellIds = new Set(surface.map((n) => n.id));
-    if (surface.length) {
-      const N = surface.length;
+    const N = inner.reduce((s, b) => s + b.items.length, 0);
+    if (N) {
       const pts = Array.from({ length: N }, (_, i) => {
-        const y = N === 1 ? 0 : 1 - ((i + 0.5) / N) * 2, q = Math.sqrt(1 - y * y), th = i * GOLDEN + base;
-        return { x: Math.cos(th) * q, y, z: Math.sin(th) * q, a: wrap(th - base) };
-      }).sort((p, q) => p.a - q.a);
-      let k = 0, prevEnd = 0;
-      for (const b of inner) {
-        const first = k;
-        for (const n of b.items) { const p = pts[k++]; at(n, p.x * R, p.y * R, p.z * R); }
-        const lastA = k > first ? pts[k - 1].a : prevEnd, firstA = k > first ? pts[first].a : prevEnd;
-        b.a0 = base + (first === 0 ? 0 : (prevEnd + firstA) / 2);
-        b.a1 = base + (k >= N ? TAU : (lastA + pts[k].a) / 2);
-        prevEnd = lastA;
-      }
-      // Keep the wedges contiguous for sectorOf even when a branch has no items.
-      for (let i = 1; i < inner.length; i++) inner[i].a0 = inner[i - 1].a1;
-    } else if (inner.length) ctx.sectorize(inner);
-    out.shell = shellIds;
-    // Ring: hubs evenly spaced in wedge order, the whole ring turned so each hub sits as close to its wedge as it can.
-    const hubs = inner.filter((b) => b.hub);
-    if (hubs.length) {
-      const even = hubs.map((_, i) => ((i + 0.5) / hubs.length) * TAU);
-      let sx = 0, sy = 0;
-      hubs.forEach((b, i) => { const dlt = (b.a0 + b.a1) / 2 - base - even[i]; sx += Math.cos(dlt); sy += Math.sin(dlt); });
-      const turn = Math.atan2(sy, sx), r = R * 1.42;
-      hubs.forEach((b, i) => {
-        const a = base + even[i] + turn;
-        tiltX(Math.cos(a) * r, 0, Math.sin(a) * r, TB, v);
-        at(b.hub, v[0], v[1], v[2]);
+        const y = N === 1 ? 0 : 1 - ((i + 0.5) / N) * 2, q = Math.sqrt(1 - y * y), th = i * GOLDEN + BASE;
+        return { x: Math.cos(th) * q, y, z: Math.sin(th) * q, a: wrap(th - BASE) };
       });
+      dealWedges(inner, pts, (n, p) => at(n, p.x * R, p.y * R, p.z * R));
     }
-    out.ring = new Set(hubs.map((b) => b.hub.id));
+    const hubs = inner.filter((b) => b.hub);
+    hubAngles(hubs).forEach((a, i) => {
+      tiltX(Math.cos(a) * R * 1.42, 0, Math.sin(a) * R * 1.42, TB, v);
+      at(hubs[i].hub, v[0], v[1], v[2]);
+    });
+    markDotsAndRing(inner, out);
     out.extent = { w: R * 1.44 + 24, h: R * 1.18 };
 
     // dust: latitude rows on the shell, colored by sector
@@ -328,69 +338,61 @@
   }
 
   // ---------- 2D: rings ----------
-  // Instructions in a white ring at the center, knowledge in colored sectors of concentric dotted rows,
-  // skills on a bead ring and apps on the outer ring.
+  // The flat twin of the orb: instructions in a white ring at the center, every item as an evenly spread dot in one
+  // annulus (slots of the same row lattice as the wedge dust), and the category hubs as hex badges on the outer ring.
   function rings(ctx, rand, d, out) {
     const { R, core, sections, branches } = ctx;
     if (core) at(core, 0, 0, 0);
     circle(sections, R * 0.16);
-    const inner = branches.filter((b) => b.kind === 'inner');
-    if (inner.length) ctx.sectorize(inner);
-    const wmax = Math.max(1, ...inner.map((b) => b.w));
-    for (const b of inner) {
-      const am = (b.a0 + b.a1) / 2, span = b.a1 - b.a0;
-      if (b.hub) at(b.hub, Math.cos(am) * R * 0.3, Math.sin(am) * R * 0.3, 0);
-      const byDepth = new Map();
-      for (const n of b.items) {
-        const k = Math.min(3, ctx.depth.get(n.id) || 1);
-        if (!byDepth.has(k)) byDepth.set(k, []);
-        byDepth.get(k).push(n);
+    const inner = branches;
+    const N = inner.reduce((s, b) => s + b.items.length, 0);
+    // Wedges sized by item count, so every wedge has the same density of real nodes.
+    const wsum = inner.reduce((s, b) => s + b.items.length + 1, 0);
+    let a = BASE;
+    for (const b of inner) { b.a0 = a; a += ((b.items.length + 1) / wsum) * TAU; b.a1 = a; }
+    // One lattice of concentric rows per wedge. Real nodes take evenly spread slots of it and the dust fills the
+    // rest, so items read as the grid's own dots and slowly replace the dust as more arrive.
+    const rowsN = 24, r0 = R * 0.4, r1 = R * 0.92, GAP = 0.04, share = budget(d, 0.64);
+    const rowR = (k) => r0 + (k / (rowsN - 1)) * (r1 - r0);
+    let L = 0;
+    for (const b of inner) for (let k = 0; k < rowsN; k++) L += rowR(k) * Math.max(0, b.a1 - b.a0 - GAP);
+    const step0 = L / Math.max(1, share + N);
+    const slotsOf = (b, step) => {
+      const s = [], span = Math.max(0, b.a1 - b.a0 - GAP);
+      for (let k = 0; k < rowsN; k++) {
+        const r = rowR(k), m = Math.floor((r * span) / step);
+        for (let j = 0; j < m; j++) { const t = b.a0 + GAP / 2 + ((j + 0.5) / m) * span; s.push({ x: Math.cos(t) * r, y: Math.sin(t) * r, fade: k / (rowsN - 1) }); }
       }
-      const rmax = R * (0.55 + 0.37 * (b.w / wmax));
-      for (const [k, list] of byDepth) {
-        const r = Math.min(rmax, R * (0.32 + k * 0.17));
-        list.forEach((n, i) => {
-          const a = b.a0 + span * ((i + 0.5) / list.length) * 0.86 + span * 0.07;
-          const rr = r + (list.length > 6 ? ((i % 3) - 1) * R * 0.05 : 0);
-          at(n, Math.cos(a) * rr, Math.sin(a) * rr, 0);
-        });
-      }
-      b.rmax = rmax;
-    }
-    circle(runOf(ctx, 'bead'), R * 1.08, -Math.PI / 2, TAU);
-    circle(runOf(ctx, 'app'), R * 1.32, -Math.PI / 2, TAU);
-    out.extent = { w: R * 1.32 + 40, h: R * 1.32 + 40 };
+      return s;
+    };
+    const lattice = inner.map((b) => {
+      let step = step0, s = slotsOf(b, step);
+      while (s.length < b.items.length && step > 0.5) s = slotsOf(b, (step *= 0.9)); // never fewer slots than items
+      const taken = new Set();
+      b.items.forEach((n, i) => {
+        const p = s[Math.min(s.length - 1, Math.floor(((i + 0.5) / b.items.length) * s.length))];
+        taken.add(p); at(n, p.x, p.y, 0);
+      });
+      return s.filter((p) => !taken.has(p));
+    });
+    const hubs = inner.filter((b) => b.hub);
+    hubAngles(hubs).forEach((a, i) => at(hubs[i].hub, Math.cos(a) * R * 1.12, Math.sin(a) * R * 1.12, 0));
+    markDotsAndRing(inner, out);
+    out.extent = { w: R * 1.12 + 60, h: R * 1.12 + 40 };
 
     for (let i = budget(d, 0.06); i > 0; i--) { // white center ring
       const a = rand() * TAU, r = R * (0.12 + 0.08 * Math.floor(rand() * 3) / 2);
       put(d, Math.cos(a) * r, Math.sin(a) * r, 0, 0, rand() < 0.4 ? 3 : 2);
     }
-    // Colored sectors of concentric rows; step chosen so the rows use their share exactly.
-    const rowsN = 24, r0 = R * 0.38, share = budget(d, 0.64);
-    let L = 0;
-    for (const b of inner) for (let k = 0; k < rowsN; k++) { const r = r0 + (k / (rowsN - 1)) * (R * 0.92 - r0); if (r <= b.rmax) L += r * (b.a1 - b.a0 - 0.04); }
-    const step = L / Math.max(1, share);
-    for (const b of inner) {
+    // The free lattice slots become the colored dust sectors.
+    inner.forEach((b, i) => {
       const c = ctx.colorIndex(b.color);
-      for (let k = 0; k < rowsN; k++) {
-        const r = r0 + (k / (rowsN - 1)) * (R * 0.92 - r0);
-        if (r > b.rmax) break;
-        const m = Math.floor((r * (b.a1 - b.a0 - 0.04)) / step);
-        const fade = (r - r0) / Math.max(1, b.rmax - r0);
-        for (let j = 0; j < m; j++) {
-          const a = b.a0 + 0.02 + ((j + 0.5) / m) * (b.a1 - b.a0 - 0.04);
-          put(d, Math.cos(a) * r, Math.sin(a) * r, 0, c, fade > 0.8 ? 0 : rand() < 0.2 ? 2 : 1);
-        }
-      }
-    }
-    const ringIdx = ctx.palette.indexOf(RING), blueIdx = ctx.palette.indexOf(BLUE);
-    for (let i = budget(d, 0.12); i > 0; i--) {
-      const a = rand() * TAU, r = R * (rand() < 0.5 ? 1.065 : 1.095);
-      put(d, Math.cos(a) * r, Math.sin(a) * r, 0, ringIdx, 1);
-    }
-    for (let i = budget(d, 0.05); i > 0; i--) {
-      const a = rand() * TAU, r = R * 1.32 + gauss(rand) * 2;
-      put(d, Math.cos(a) * r, Math.sin(a) * r, 0, blueIdx, 0);
+      for (const p of lattice[i]) put(d, p.x, p.y, 0, c, p.fade > 0.8 ? 0 : rand() < 0.2 ? 2 : 1);
+    });
+    const ringIdx = ctx.palette.indexOf(RING);
+    for (let i = budget(d, 0.1); i > 0; i--) { // hub ring
+      const a = rand() * TAU, r = R * 1.12 + gauss(rand) * 2.5;
+      put(d, Math.cos(a) * r, Math.sin(a) * r, 0, ringIdx, rand() < 0.2 ? 1 : 0);
     }
     out.haze = (r2) => { const a = r2() * TAU, r = R * (0.95 + 0.5 * r2()); return [Math.cos(a) * r, Math.sin(a) * r, 0, 0, 0]; };
   }

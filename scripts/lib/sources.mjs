@@ -4,10 +4,11 @@
 // settings.enabledPlugins, ~/.claude.json mcpServers and toolbox/parked-mcp.json.
 import { join, basename, dirname } from 'node:path';
 import { existsSync, openSync, readSync, closeSync } from 'node:fs';
-import { read, readJson, objectOr, ls, isDir, mtime, titleCase, firstHeading, frontmatter, escapeRegExp } from './text.mjs';
+import { read, readJson, objectOr, ls, isDir, mtime, titleCase, firstHeading, frontmatter, escapeRegExp, modelFamily, MODEL_CATALOG, catalogModel } from './text.mjs';
+import { MENTION_SOURCES } from './graph.mjs';
 
 const NOT_MODS = new Set(['cache', 'data', 'marketplaces', 'store', 'synced']);
-const HUBS = { memory: 'Memory', notes: 'Notes', skill: 'Skills', mod: 'Mods', agent: 'Agents', mcp: 'MCP Servers', hook: 'Hooks', reference: 'Reference' };
+const HUBS = { memory: 'Memory', notes: 'Notes', skill: 'Skills', mod: 'Mods', agent: 'Agents', model: 'Models', mcp: 'MCP Servers', hook: 'Hooks', reference: 'Reference' };
 
 /** `~/.claude/...` display path for a file under the Claude folder. */
 const tilde = (ctx, path) => `~/.claude/${path.slice(ctx.claude.length + 1).replace(/\\/g, '/')}`;
@@ -27,6 +28,7 @@ export function scanAll(g, ctx) {
   scanMcp(g, ctx);
   scanHooks(g, ctx);
   scanReference(g, ctx);
+  scanModels(g, ctx);
   pruneEmptyHubs(g);
   g.resolveCrossLinks();
 }
@@ -118,7 +120,7 @@ function addSkill(g, ctx, group, { name, path, active, sub, desc }) {
   const exists = Boolean(path) && existsSync(path);
   const { meta, body } = frontmatter(exists ? read(path) : '');
   const id = g.addNode(`skill:${meta.name || name}`, {
-    label: meta.name || name, type: 'skill', sub, active,
+    label: meta.name || name, type: 'skill', sub, active, model: meta.model,
     file: exists ? tilde(ctx, path) : undefined, body: body || desc || '', mtime: exists ? mtime(path) : undefined,
     desc: meta.description || desc,
   });
@@ -439,6 +441,54 @@ function scanReference(g, ctx) {
     });
     g.link('hub:reference', id);
     g.register(id, { path, slugs: [slug], text, dir: dirname(path) });
+  }
+}
+
+// ---------- models: Claude families plus other popular models ----------
+// Every model in MODEL_CATALOG gets a node. It is active when something names it: the default `model` in
+// settings.json, an agent's or skill's `model:` frontmatter, a mention in instructions, memories, notes or reference
+// ("Opus", "claude-haiku-4-5", "Gemini Flash"), or an alias in the free-helpers config (`helpers/config.json`, the
+// FreeLLMAPI hub; only its model names are read, never its key). Models nothing names stay inactive.
+function scanModels(g, ctx) {
+  const uses = new Map(MODEL_CATALOG.map((m) => [m.id, { users: [], mentions: [], hub: [] }]));
+  const def = modelFamily(ctx.settings.model);
+  for (const n of g.nodes.values()) {
+    if ((n.type === 'agent' || n.type === 'skill') && n.model) {
+      const fam = modelFamily(n.model);
+      if (fam) uses.get(fam).users.push(n);
+    }
+  }
+  for (const [id, { text }] of g.documents) {
+    if (!MENTION_SOURCES.has(g.nodes.get(id)?.type)) continue;
+    for (const m of MODEL_CATALOG) if (m.match.test(text)) uses.get(m.id).mentions.push(id);
+  }
+  const aliases = objectOr(objectOr(readJson(join(ctx.claude, 'helpers', 'config.json'))).aliases);
+  for (const [alias, model] of Object.entries(aliases)) {
+    const m = typeof model === 'string' && catalogModel(model);
+    if (m) uses.get(m.id).hub.push(`${alias}: ${model}`.replace(/[^\w.:\- ]/g, ''));
+  }
+  const count = (k, word) => `${k} ${word}${k === 1 ? '' : 's'}`;
+  for (const { id: key, label, maker } of MODEL_CATALOG) {
+    const { users, mentions, hub } = uses.get(key);
+    const isDefault = def === key;
+    const active = isDefault || users.length > 0 || mentions.length > 0 || hub.length > 0;
+    const agents = users.filter((n) => n.type === 'agent').length, skills = users.filter((n) => n.type === 'skill').length;
+    const parts = [isDefault ? 'Default model' : '', agents ? `runs ${count(agents, 'agent')}` : '', skills ? `runs ${count(skills, 'skill')}` : '',
+      hub.length ? 'on the FreeLLMAPI hub' : ''].filter(Boolean);
+    const desc = parts.length ? parts.join(' · ').replace(/^r/, 'R').replace(/^o/, 'O')
+      : mentions.length ? `Named in ${count(mentions.length, 'document')}` : `${maker} model · not used yet`;
+    const body = [`# ${label}`, '', `Made by ${maker}.\n`,
+      isDefault ? 'The default model for every session (`model` in settings.json).\n' : '',
+      users.length ? `## Used by\n\n${users.map((n) => `- ${n.label} (${n.type})`).join('\n')}\n` : '',
+      hub.length ? `## FreeLLMAPI hub\n\n${hub.map((h) => `- ${h}`).join('\n')}\n` : '',
+      mentions.length ? `Named in ${count(mentions.length, 'document')} (instructions, memories, notes or reference).` : '',
+      active ? '' : 'Nothing in `~/.claude` names this model yet.',
+    ].filter(Boolean).join('\n');
+    const id = g.addNode(`model:${key}`, { label, type: 'model', sub: isDefault ? 'default' : maker, from: hub.length ? 'FreeLLMAPI' : undefined, active, desc, body });
+    g.link('hub:model', id);
+    if (isDefault) g.link('core', id, 'link');
+    for (const n of users) g.link(n.id, id, 'link');
+    for (const m of mentions) g.link(m, id, 'mention');
   }
 }
 

@@ -17,6 +17,15 @@ test('demo build flags the untidy memory and lists parked tools', () => {
   assert.equal(stats.health.clean, stats.health.checked - 2);
 });
 
+test('an agent or skill asking for an unknown model is flagged', () => {
+  const g = new BrainGraph({ redact: (s) => s });
+  g.addNode('agent:a', { label: 'a', type: 'agent', desc: 'd', model: 'gpt-4o' });
+  g.addNode('agent:b', { label: 'b', type: 'agent', desc: 'd', model: 'inherit' });
+  g.addNode('skill:c', { label: 'c', type: 'skill', desc: 'd', model: 'claude-haiku-4-5' });
+  const items = checkHealth(g).items.filter((i) => i.kind === 'unknown-model');
+  assert.deepEqual(items.map((i) => i.id), ['agent:a']);
+});
+
 test('unindexed only applies inside a project that has its own MEMORY.md; real files are not broken links', () => {
   const g = new BrainGraph({ redact: (s) => s });
   // Two projects with the same label: only the first has an index.

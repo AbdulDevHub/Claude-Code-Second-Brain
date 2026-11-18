@@ -83,9 +83,9 @@
       for (const d of N) {
         d.vx -= d.x * 0.012 * a; d.vy -= d.y * 0.012 * a; d.vz -= d.z * 0.012 * a;
         if (d.fx != null) { d.x = d.fx; d.y = d.fy; d.z = d.fz; d.vx = d.vy = d.vz = 0; continue; }
-        d.vx *= keep; d.vy *= keep; d.vz *= keep;
+        d.vx *= keep; d.vy *= keep; d.vz = this.flat ? 0 : d.vz * keep; // flat: depth forces never move a node
         d.x += d.vx; d.y += d.vy; d.z += d.vz;
-        if (this.flat) { d.z *= 0.8; d.vz = 0; }
+        if (this.flat) d.z *= 0.8;
       }
       return true;
     }

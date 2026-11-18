@@ -35,7 +35,7 @@ export function build({ home = homedir(), omitBodies = false, extraRedactions = 
     memories: of('memory').length,
     notes: of('note').filter((n) => n.id !== 'note:index').length,
     skills: tally('skill'), mods: tally('mod'), mcp: tally('mcp'), hooks: tally('hook'),
-    agents: of('agent').length, projects: of('project').length,
+    agents: of('agent').length, models: tally('model'), projects: of('project').length,
     connections: graph.links.length, files: nodes.filter((n) => n.file).length,
     bytes: nodes.reduce((sum, n) => sum + n.size, 0),
     health: health.summary,
@@ -74,7 +74,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     const pair = ({ active, total }) => `${active}/${total} active`;
     console.log(`Second Brain built in ${stats.buildMs}ms${stats.public ? ' (public: contents omitted)' : ''}`);
     console.log(`  ${nodeCount} nodes · ${stats.connections} connections`);
-    console.log(`  ${stats.memories} memories · ${stats.notes} notes · ${stats.agents} agents`);
+    console.log(`  ${stats.memories} memories · ${stats.notes} notes · ${stats.agents} agents · ${stats.models.active}/${stats.models.total} models`);
     console.log(`  skills ${pair(stats.skills)} · mods ${pair(stats.mods)} · mcp ${pair(stats.mcp)} · hooks ${pair(stats.hooks)}`);
     console.log(`  health ${stats.health.clean}/${stats.health.checked} clean`);
     console.log(`  -> ${out}`);

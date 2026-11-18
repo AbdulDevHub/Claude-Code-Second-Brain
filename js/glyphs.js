@@ -32,6 +32,7 @@
     chart: 'M4 20V10M10 20V4M16 20v-7M22 20H2',
     check: 'M4 12l5 5L20 6',
     hook: 'M14 3v11a5 5 0 0 1-10 0v-2l3 2 M14 3h4',
+    chip: 'M7 7h10v10H7zM10 10h4v4h-4zM10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4',
   };
 
   // First match wins, tested against "label id" in lower case. Type defaults come after.
@@ -61,10 +62,10 @@
     [/terminal|\bcli\b|shell|bash|setup|init/, 'terminal'],
     [/brainstorm|architect|plan|idea/, 'sparkle'],
   ];
-  const BY_TYPE = { skill: 'bolt', mod: 'box', mcp: 'plug', agent: 'bot', hook: 'hook', group: 'folder', hub: 'sparkle', core: 'sparkle' };
+  const BY_TYPE = { skill: 'bolt', mod: 'box', mcp: 'plug', agent: 'bot', hook: 'hook', model: 'chip', group: 'folder', hub: 'sparkle', core: 'sparkle' };
 
   // Category hubs (hex badges on the orb's ring) get an icon for what they hold.
-  const HUB_RULES = [[/memor/, 'brain'], [/note/, 'pen'], [/refer/, 'book'], [/skill/, 'bolt'], [/hook/, 'hook'], [/mod/, 'box'], [/mcp/, 'plug'], [/agent/, 'bot']];
+  const HUB_RULES = [[/model/, 'chip'], [/memor/, 'brain'], [/note/, 'pen'], [/refer/, 'book'], [/skill/, 'bolt'], [/hook/, 'hook'], [/mod/, 'box'], [/mcp/, 'plug'], [/agent/, 'bot']];
 
   function glyphFor(n) {
     const text = `${n.label || ''} ${n.id || ''}`.toLowerCase();

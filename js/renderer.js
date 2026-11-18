@@ -10,7 +10,7 @@
   };
   const rgba = (rgb, a) => `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${a})`;
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-  const BADGE = { skill: 'circle', group: 'circle', hook: 'circle', mod: 'hex', mcp: 'hex', agent: 'hex' };
+  const BADGE = { skill: 'circle', group: 'circle', hook: 'circle', model: 'hex', mod: 'hex', mcp: 'hex', agent: 'hex' };
 
   // One soft radial glow per color, drawn once and stamped with drawImage (much cheaper than per-frame gradients).
   const spriteCache = new Map();

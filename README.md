@@ -23,11 +23,12 @@ Claude Code remembers you through plain files in `~/.claude`: your `CLAUDE.md`, 
 | | |
 | --- | --- |
 | **Core** (white sparkle, center) | `~/.claude/CLAUDE.md`, the global instructions loaded into every session. The white cluster around it holds its `##` sections. |
-| **Hubs** (labelled; hex badges on the orb's ring) | One per category: Memory, Notes, Skills, Mods, MCP Servers, Agents, Hooks, Reference. Each takes its category's color and icon. |
+| **Hubs** (labelled; hex badges on the ring in the Orb and Rings views) | One per category: Memory, Notes, Skills, Mods, MCP Servers, Agents, Models, Hooks, Reference. Each takes its category's color and icon. |
 | **Memories and notes** (orange, red) | `projects/*/memory/*.md`, the facts Claude saved per project, and the notes index, as bright points on the orb. |
-| **Skills** (amber beads) | Local skills, claude.ai-synced skills and **parked** skills switched off in [Toolbox](#parked-tools), as dots on the orb's sphere (the inner ring in the 2D Rings map). |
-| **Hooks** (teal beads) | Scripts registered under `hooks` in your `settings.json`, in each mod's `hooks/hooks.json` and in each project's `.claude/settings.json`, one per script and grouped by owner, with their events, matchers and timeouts. The commands themselves are never read into the output. Like skills, they are dots on the orb's sphere. |
-| **Apps** (blue hex badges) | Mods, marketplace plugins, MCP servers and agents: dots on the orb's sphere, the outer ring in the 2D Rings map. MCP servers show only a secret-free host or package name. |
+| **Skills** (amber beads) | Local skills, claude.ai-synced skills and **parked** skills switched off in [Toolbox](#parked-tools), as dots on the orb's sphere and in the Rings map. |
+| **Hooks** (teal beads) | Scripts registered under `hooks` in your `settings.json`, in each mod's `hooks/hooks.json` and in each project's `.claude/settings.json`, one per script and grouped by owner, with their events, matchers and timeouts. The commands themselves are never read into the output. Like skills, they are dots on the orb's sphere and in the Rings map. |
+| **Models** (pink) | Claude (Fable, Opus, Sonnet, Haiku) plus other popular models (Gemini, Gemma, ChatGPT, Grok, Llama, DeepSeek, Qwen, Mistral and more). A model is **active** when something names it: the default `model` in `settings.json` (linked to the core), an agent's or skill's `model:` (linked to it), a mention in your instructions, memories, notes or reference, or an alias in the free-helpers `helpers/config.json` (FreeLLMAPI hub; only model names are read). The rest show as inactive. Health flags a `model:` that names no known model. |
+| **Apps** (blue hex badges) | Mods, marketplace plugins, MCP servers and agents: dots on the orb's sphere and in the Rings map. MCP servers show only a secret-free host or package name. |
 | **Dashed rims** | Parked tools: installed but switched off. They carry no signal pulses. |
 | **Solid / dashed lines** | Structure and `[[wikilinks]]` / mentions of a tool inside a document. Faint in the structured layouts, lit when you hover or select. |
 | **Dust** | Decorative particles shaped by the layout and colored by the category whose sector they sit in. They aren't clickable. |
@@ -50,7 +51,7 @@ Claude Code remembers you through plain files in `~/.claude`: your `CLAUDE.md`, 
 | Tab | What it shows |
 | --- | --- |
 | **3D orbs** | **Orb**: the dotted sphere, made of every item (knowledge, skills, hooks, mods, MCP servers, agents) as evenly spread dots (named on hover) topped up with decorative dust, with the category hubs as hex badges on one orbit ring. **Neural**: the original force-directed 3D graph. |
-| **2D map** | **Force**, **Circle**, **Hex** (honeycomb tiles) and **Rings** (concentric sectors per category, skills and apps on the outer rings). Drag pans. |
+| **2D map** | **Force**, **Circle**, **Hex** (honeycomb tiles) and **Rings** (the flat twin of the orb: every item takes a dot of the dotted rows in its colored wedge, slowly replacing the filler dots as you add more, category hubs as hex badges on the outer ring, names on hover). Drag pans. |
 | **Timeline** | One lane per category, placed by last-modified date. Recent weeks get more room than old months. |
 | **Skills** | A deck of every skill ranked by size, with its rough token cost and active/parked state. |
 | **Applications** | MCP servers, mods, agents and hooks as hex tiles. Agents kept in subfolders of `~/.claude/agents/` show their folder. |
@@ -58,7 +59,7 @@ Claude Code remembers you through plain files in `~/.claude`: your `CLAUDE.md`, 
 
 The chrome stays minimal: tab pills, search, a Motion toggle with a speed slider, and zoom controls. **Menu** opens a drawer with telemetry, channels, the activity chart, the event log and the runtime readout.
 
-![Rings view: concentric dotted sectors per category, with skills and apps on the outer rings](docs/screenshots/rings.png)
+![Rings view: every item as a dot in colored wedges, with the category hubs on the outer ring](docs/screenshots/rings.png)
 
 ![Timeline view: one lane per category, nodes placed by last-modified date](docs/screenshots/timeline.png)
 

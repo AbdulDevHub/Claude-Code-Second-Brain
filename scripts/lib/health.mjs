@@ -1,5 +1,6 @@
 // Read-only health checks over the built graph: things worth tidying in ~/.claude.
 // Pure function of the graph and `now`, so tests can pin the clock.
+import { modelFamily } from './text.mjs';
 
 export const STALE_DAYS = 120;
 const DAY = 86_400_000;
@@ -13,6 +14,7 @@ const isIndexId = (id) => id === 'note:index' || id.startsWith('project:');
 /** Kinds in display order. `warn` kinds lower the score; `info` kinds are just listed. */
 export const HEALTH_KINDS = [
   { kind: 'missing-script', level: 'warn', title: 'Hook script missing' },
+  { kind: 'unknown-model', level: 'warn', title: 'Unknown model' },
   { kind: 'unindexed', level: 'warn', title: 'Not in the memory index' },
   { kind: 'missing-link', level: 'warn', title: 'Links to nothing' },
   { kind: 'no-description', level: 'warn', title: 'No description' },
@@ -57,6 +59,7 @@ export function checkHealth(graph, now = Date.now()) {
       const days = n.mtime ? Math.floor((now - n.mtime) / DAY) : 0;
       if (days > STALE_DAYS) add('stale', n, `last edited ${days} days ago`);
     }
+    if ((n.type === 'agent' || n.type === 'skill') && n.model && modelFamily(n.model) === undefined) add('unknown-model', n, `asks for model "${n.model}", which isn't Fable, Opus, Sonnet or Haiku`);
     if (n.type === 'hook' && n.missing === true) add('missing-script', n, 'its script file is gone, so this hook fails every time it fires');
     // A parked mod is already listed; its hooks being off follows from that, so they aren't listed again.
     if (PARKABLE.has(n.type) && n.active === false && !(n.type === 'hook' && n.from)) add('parked', n, n.type === 'hook' ? 'all hooks are off (disableAllHooks)' : `${n.type} is switched off`);

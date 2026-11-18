@@ -1,4 +1,5 @@
 {
+  "model": "opus",
   "env": {
     "CLAUDE_CODE_PLUGIN_DIRS": "C:\\Users\\ada\\.claude\\plugins\\focus-mode"
   },

@@ -59,14 +59,15 @@ test('layouts: orb puts every item on the sphere and the category hubs on the ou
   for (const n of nodes.filter((x) => x.type === 'hub')) assert.ok(r(n) > ctx.R * 1.2, n.id);
 });
 
-test('layouts: rings keep tools outside the knowledge sectors', () => {
+test('layouts: rings put every item in the dotted annulus and the hubs on the outer ring', () => {
   const { nodes, ctx } = graph();
-  Layouts.build('rings', ctx, 500);
+  const res = Layouts.build('rings', ctx, 500);
   const r = (n) => Math.hypot(n.tx, n.ty);
-  const inner = Math.max(...nodes.filter((n) => ['memory', 'note', 'reference', 'project'].includes(n.type)).map(r));
-  const beads = Math.min(...nodes.filter((n) => n.type === 'skill').map(r));
-  const apps = Math.min(...nodes.filter((n) => ['mod', 'mcp', 'agent'].includes(n.type)).map(r));
-  assert.ok(inner < beads && beads < apps, `${inner} < ${beads} < ${apps}`);
+  const items = nodes.filter((n) => !['core', 'section', 'hub'].includes(n.type));
+  for (const n of items) assert.ok(r(n) >= ctx.R * 0.39 && r(n) <= ctx.R * 0.93, n.id);
+  for (const n of nodes.filter((x) => x.type === 'hub')) assert.ok(r(n) > ctx.R * 1.05, n.id);
+  assert.equal(res.shell.size, items.length);
+  assert.equal(res.ring.size, nodes.filter((x) => x.type === 'hub').length);
 });
 
 test('layouts: timeline orders dated nodes in a lane by modified time', () => {

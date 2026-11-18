@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
-import { frontmatter, firstHeading } from '../scripts/lib/text.mjs';
+import { frontmatter, firstHeading, modelFamily, catalogModel, MODEL_CATALOG } from '../scripts/lib/text.mjs';
 import { createRedactor } from '../scripts/lib/redact.mjs';
 import { BrainGraph, mentionPattern } from '../scripts/lib/graph.mjs';
 import { mcpEndpoint, projectLabel, splitPluginDirs, hookScript } from '../scripts/lib/sources.mjs';
@@ -193,6 +193,46 @@ test('agents in subfolders load like Claude Code loads them; kit files without f
   assert.equal(designer.file, '~/.claude/agents/design/designer.md');
   assert.ok(!agents.some((n) => /README/i.test(n.id)), 'kit README is not an agent');
   assert.equal(agents.length, 3);
+});
+
+test('model families: aliases, full ids and inherit', () => {
+  assert.equal(modelFamily('opus'), 'opus');
+  assert.equal(modelFamily('claude-sonnet-4-5'), 'sonnet');
+  assert.equal(modelFamily('Haiku'), 'haiku');
+  assert.equal(modelFamily('sonnet[1m]'), 'sonnet');
+  assert.equal(modelFamily('inherit'), null);
+  assert.equal(modelFamily(''), null);
+  assert.equal(modelFamily('gpt-4o'), undefined);
+});
+
+test('model catalog: ids and names map to their entry', () => {
+  assert.equal(catalogModel('qwen3.8-27b').id, 'qwen');
+  assert.equal(catalogModel('gemini-flash').id, 'gemini-flash');
+  assert.equal(catalogModel('poolside-laguna-s-2.1').id, 'laguna');
+  assert.equal(catalogModel('nemotron-3-ultra-550b').id, 'nemotron');
+  assert.equal(catalogModel('auto:smart'), undefined);
+  assert.ok(MODEL_CATALOG.find((m) => m.id === 'gpt-luna').match.test('I use ChatGPT Luna'));
+  assert.ok(!MODEL_CATALOG.find((m) => m.id === 'llama').match.test('Ollama 0.3'), 'Ollama is not Llama');
+});
+
+test('models: the whole catalog appears, active only when something names it', () => {
+  const { json } = build({ home: DEMO_HOME });
+  assert.ok(!json.includes('freellmapi-demo-hub-key-456'), 'the hub key never reaches the output');
+  const { nodes, links, stats } = JSON.parse(json);
+  const models = nodes.filter((n) => n.type === 'model');
+  assert.equal(models.length, MODEL_CATALOG.length);
+  const active = models.filter((n) => n.active).map((n) => n.id).sort();
+  assert.deepEqual(active, ['model:gemini-flash', 'model:haiku', 'model:opus', 'model:qwen', 'model:sonnet']);
+  assert.deepEqual(stats.models, { total: MODEL_CATALOG.length, active: 5 });
+  assert.equal(nodes.find((n) => n.id === 'model:qwen').from, 'FreeLLMAPI');
+  assert.equal(nodes.find((n) => n.id === 'model:grok').sub, 'xAI');
+  const has = (a, b, kind) => links.some((l) => ((l.source === a && l.target === b) || (l.source === b && l.target === a)) && (!kind || l.kind === kind));
+  assert.ok(has('hub:model', 'model:sonnet', 'structure'));
+  assert.ok(has('agent:reviewer', 'model:sonnet', 'link'));
+  assert.ok(has('agent:test-runner', 'model:haiku', 'link'));
+  assert.ok(has('core', 'model:opus', 'link'), 'the default model links to the core');
+  assert.equal(nodes.find((n) => n.id === 'model:opus').sub, 'default');
+  assert.ok(links.some((l) => l.target === 'model:haiku' && l.kind === 'mention'), 'WORKFLOW.md names Haiku');
 });
 
 test('odd but valid files never crash the build', () => {

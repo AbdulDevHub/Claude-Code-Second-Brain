@@ -1,0 +1,8 @@
+{
+  "hubKey": "freellmapi-demo-hub-key-456",
+  "aliases": {
+    "gemini": "gemini-flash",
+    "fast": "qwen3-32b",
+    "smart": "auto:smart"
+  }
+}

@@ -13,12 +13,12 @@ function startSecondBrain(isDemo) {
   // Warm palette: knowledge in oranges and reds, tools that reach outside (mods, MCP, agents) in cool accents.
   const COLORS = {
     core: '#ffffff', hub: '#ffd9c2', section: '#ffe8d6', project: '#ff8a3d', memory: '#ff6a2b',
-    note: '#ff3b30', skill: '#ffb347', mod: '#4fd8ff', agent: '#9d8cff', reference: '#ffd166', mcp: '#3aa0ff', hook: '#2ee6b8',
+    note: '#ff3b30', skill: '#ffb347', mod: '#4fd8ff', agent: '#9d8cff', reference: '#ffd166', mcp: '#3aa0ff', hook: '#2ee6b8', model: '#ff7ac8',
   };
-  const HUB_COLOR = { 'hub:memory': 'memory', 'hub:notes': 'note', 'hub:skill': 'skill', 'hub:mod': 'mod', 'hub:agent': 'agent', 'hub:mcp': 'mcp', 'hub:hook': 'hook', 'hub:reference': 'reference' };
+  const HUB_COLOR = { 'hub:memory': 'memory', 'hub:notes': 'note', 'hub:skill': 'skill', 'hub:mod': 'mod', 'hub:agent': 'agent', 'hub:mcp': 'mcp', 'hub:hook': 'hook', 'hub:reference': 'reference', 'hub:model': 'model' };
   const TYPE_NAMES = {
     core: 'Core', hub: 'Hub', section: 'Instruction', project: 'Project memory', memory: 'Memory',
-    note: 'Note', skill: 'Skill', mod: 'Mod', agent: 'Agent', reference: 'Reference', mcp: 'MCP server', hook: 'Hook', group: 'Group',
+    note: 'Note', skill: 'Skill', mod: 'Mod', agent: 'Agent', reference: 'Reference', mcp: 'MCP server', hook: 'Hook', model: 'Model', group: 'Group',
   };
   // Channels toggle one or more node types. The core and hubs always stay visible.
   const FILTERS = [
@@ -29,9 +29,10 @@ function startSecondBrain(isDemo) {
     { key: 'agent', label: 'Agents', types: ['agent'] },
     { key: 'mcp', label: 'MCP servers', types: ['mcp'] },
     { key: 'hook', label: 'Hooks', types: ['hook'] },
+    { key: 'model', label: 'Models', types: ['model'] },
     { key: 'reference', label: 'Reference', types: ['reference'] },
     { key: 'section', label: 'Instructions', types: ['section'] },
-    { key: 'dormant', label: 'Parked tools', dormant: true },
+    { key: 'dormant', label: 'Parked & unused', dormant: true },
   ];
   const VIEWS = [
     { key: 'orbs', label: '3D orbs', title: '3D ORBS', subs: [['orb', 'Orb'], ['neural', 'Neural']] },
@@ -44,6 +45,7 @@ function startSecondBrain(isDemo) {
   // Mirrors HEALTH_KINDS in scripts/lib/health.mjs, plus a plain-language fix for each.
   const HEALTH_KINDS = [
     ['missing-script', 'HOOK SCRIPT MISSING', 'warn', 'Restore the script or remove the hook from settings.json.'],
+    ['unknown-model', 'UNKNOWN MODEL', 'warn', 'Set model: to fable, opus, sonnet, haiku or inherit.'],
     ['unindexed', 'NOT IN THE MEMORY INDEX', 'warn', 'Add a line for it to that project\'s MEMORY.md, or delete the file.'],
     ['missing-link', 'LINKS TO NOTHING', 'warn', 'Write the missing memory or note, or fix the link.'],
     ['no-description', 'NO DESCRIPTION', 'warn', 'Add a description: line so Claude knows when it applies.'],
@@ -52,7 +54,7 @@ function startSecondBrain(isDemo) {
     ['parked', 'PARKED', 'info', 'Switched off in Toolbox. Fine if that was on purpose.'],
   ];
   const HEALTH = Array.isArray(BRAIN.health) ? BRAIN.health : [];
-  const BASE_R = { core: 22, hub: 9.5, project: 8, group: 9, section: 5, memory: 5.5, note: 5.5, skill: 9, mod: 12, agent: 12, mcp: 12, hook: 9, reference: 5.5 };
+  const BASE_R = { core: 22, hub: 9.5, project: 8, group: 9, section: 5, memory: 5.5, note: 5.5, skill: 9, mod: 12, agent: 12, mcp: 12, hook: 9, model: 12, reference: 5.5 };
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const isPhone = () => window.innerWidth <= 900;
   const DUST_COUNT = window.innerWidth <= 900 ? 4000 : 6500;
@@ -74,7 +76,7 @@ function startSecondBrain(isDemo) {
     sub: n.sub, project: n.project, from: n.from, version: n.version, model: n.model, active: n.active,
     channel: channelOf(n), color: colorOf(n), seed: i * 1.37, visibleNow: true,
     degree: 0, r: 0, q: 0, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, fx: null, fy: null, fz: null, tx: 0, ty: 0, tz: 0,
-    p: null, rgb: null, rgbDark: null, rgbLight: null, sprite: null, bodySprite: null, badge: null, edgeStyle: '',
+    p: null, rgb: null, rgbDark: null, rgbLight: null, sprite: null, bodySprite: null, badge: null, hubBadge: null, edgeStyle: '',
   }));
   const byId = new Map(nodes.map((n) => [n.id, n]));
   const links = BRAIN.links
@@ -483,7 +485,7 @@ function startSecondBrain(isDemo) {
       .sort((a, b) => a.type.localeCompare(b.type) || a.label.localeCompare(b.label));
     const meta = [
       ['TYPE', TYPE_NAMES[n.type], true],
-      n.active != null ? ['STATUS', n.active ? 'ACTIVE' : 'PARKED · switched off in Toolbox', n.active ? 'ok' : 'warn'] : null,
+      n.active != null ? ['STATUS', n.active ? 'ACTIVE' : n.type === 'model' ? 'INACTIVE · nothing names it yet' : 'PARKED · switched off in Toolbox', n.active ? 'ok' : 'warn'] : null,
       n.sub && n.sub !== 'memory' ? ['CLASS', n.sub] : null,
       n.project ? ['PROJECT', n.project] : null,
       n.from && !n.project ? ['FROM', n.from] : null,
@@ -554,6 +556,7 @@ function startSecondBrain(isDemo) {
     ['MEMORIES', pair(S.memories), COLORS.memory], ['NOTES', pair(S.notes), COLORS.note], ['SKILLS', pair(S.skills), COLORS.skill],
     ['MODS', pair(S.mods), COLORS.mod], ['MCP', pair(S.mcp), COLORS.mcp], ['AGENTS', pair(S.agents), COLORS.agent],
     ...(S.hooks ? [['HOOKS', pair(S.hooks), COLORS.hook]] : []),
+    ...(S.models ? [['MODELS', pair(S.models), COLORS.model]] : []),
     ['SYNAPSES', pair(S.connections), COLORS.hub, true],
     S.health ? ['HEALTH', { active: S.health.clean, total: S.health.checked }, '#5dff9b', true] : null,
   ].filter(Boolean);
