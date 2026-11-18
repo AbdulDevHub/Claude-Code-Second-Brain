@@ -781,6 +781,10 @@ function startSecondBrain(isDemo) {
     document.body.classList.add('online');
     renderer.burst(performance.now() / 1000);
     if (!state.structured) physics.reheat(1);
+    // Fit the camera from the moment the boot screen lifts: an earlier fit window may have run out during the boot.
+    fitting = true;
+    clearTimeout(fitTimer);
+    fitTimer = setTimeout(() => { fitting = false; }, state.structured ? 2500 : 9000);
     countUp();
     lastInteract = performance.now() - 2000;
   }
@@ -841,7 +845,6 @@ function startSecondBrain(isDemo) {
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
-  fitTimer = setTimeout(() => { fitting = false; }, 9000);
   window.addEventListener('resize', () => { renderer.resize(); frameView(); if (!state.selected) recenter(); });
 
   // ---------- utils ----------
