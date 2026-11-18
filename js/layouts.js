@@ -59,9 +59,11 @@
       branches.push({ hub: null, items: orphans, kind: 'inner', color: WHITE, a0: 0, a1: 0, w: 0 });
     }
 
-    // Angular sectors, weighted by the square root of size so one big branch doesn't swallow the circle.
+    // Angular sectors, weighted by the square root of size so one big branch doesn't swallow the circle. Only active
+    // items count: parked or unused ones (like the model catalog's fillers) fill a sector without widening it.
     const sectorize = (list) => {
-      const total = list.reduce((s, b) => s + (b.w = (2 + Math.sqrt(b.items.length + 1) * 2) * (b.kind === "app" ? 0.4 : 1)), 0);
+      const size = (b) => b.items.filter((n) => n.active !== false).length;
+      const total = list.reduce((s, b) => s + (b.w = (2 + Math.sqrt(size(b) + 1) * 2) * (b.kind === "app" ? 0.4 : 1)), 0);
       let a = -Math.PI / 2;
       for (const b of list) { b.a0 = a; a += (b.w / total) * TAU; b.a1 = a; }
     };
@@ -346,12 +348,12 @@
     circle(sections, R * 0.16);
     const inner = branches;
     const N = inner.reduce((s, b) => s + b.items.length, 0);
-    // Wedges sized by item count, so every wedge has the same density of real nodes.
-    const wsum = inner.reduce((s, b) => s + b.items.length + 1, 0);
-    let a = BASE;
-    for (const b of inner) { b.a0 = a; a += ((b.items.length + 1) / wsum) * TAU; b.a1 = a; }
+    // Wedges keep their usual (square-root weighted) size, so new items fill a wedge instead of widening it.
+    ctx.sectorize(inner);
     // One lattice of concentric rows per wedge. Real nodes take evenly spread slots of it and the dust fills the
-    // rest, so items read as the grid's own dots and slowly replace the dust as more arrive.
+    // rest, so items read as the grid's own dots and slowly replace the dust as more arrive. Active items take the
+    // bright rows; parked or unused ones take the faint outer rim (and spill inward only when the rim is full).
+    const FAINT = 0.8; // rows past this fraction of the annulus are the faint rim
     const rowsN = 24, r0 = R * 0.4, r1 = R * 0.92, GAP = 0.04, share = budget(d, 0.64);
     const rowR = (k) => r0 + (k / (rowsN - 1)) * (r1 - r0);
     let L = 0;
@@ -366,13 +368,19 @@
       return s;
     };
     const lattice = inner.map((b) => {
-      let step = step0, s = slotsOf(b, step);
-      while (s.length < b.items.length && step > 0.5) s = slotsOf(b, (step *= 0.9)); // never fewer slots than items
+      let on = b.items.filter((n) => n.active !== false), off = b.items.filter((n) => n.active === false);
+      let step = step0, s, bright, dim;
+      const cut = () => { bright = s.filter((p) => p.fade <= FAINT); dim = s.filter((p) => p.fade > FAINT); };
+      s = slotsOf(b, step); cut();
+      // A crowded wedge gets a finer grid: never fewer slots than items, nor fewer bright slots than active items.
+      while ((s.length < b.items.length || bright.length < on.length) && step > 0.5) { s = slotsOf(b, (step *= 0.9)); cut(); }
+      if (off.length > dim.length) { on = on.concat(off.slice(dim.length)); off = off.slice(0, dim.length); } // full rim spills inward
       const taken = new Set();
-      b.items.forEach((n, i) => {
-        const p = s[Math.min(s.length - 1, Math.floor(((i + 0.5) / b.items.length) * s.length))];
+      const spread = (pool, list) => list.forEach((n, i) => {
+        const p = pool[Math.min(pool.length - 1, Math.floor(((i + 0.5) / list.length) * pool.length))];
         taken.add(p); at(n, p.x, p.y, 0);
       });
+      spread(bright, on); spread(dim, off);
       return s.filter((p) => !taken.has(p));
     });
     const hubs = inner.filter((b) => b.hub);
@@ -387,7 +395,7 @@
     // The free lattice slots become the colored dust sectors.
     inner.forEach((b, i) => {
       const c = ctx.colorIndex(b.color);
-      for (const p of lattice[i]) put(d, p.x, p.y, 0, c, p.fade > 0.8 ? 0 : rand() < 0.2 ? 2 : 1);
+      for (const p of lattice[i]) put(d, p.x, p.y, 0, c, p.fade > FAINT ? 0 : rand() < 0.2 ? 2 : 1);
     });
     const ringIdx = ctx.palette.indexOf(RING);
     for (let i = budget(d, 0.1); i > 0; i--) { // hub ring

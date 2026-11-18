@@ -51,7 +51,7 @@ Claude Code remembers you through plain files in `~/.claude`: your `CLAUDE.md`, 
 | Tab | What it shows |
 | --- | --- |
 | **3D orbs** | **Orb**: the dotted sphere, made of every item (knowledge, skills, hooks, mods, MCP servers, agents) as evenly spread dots (named on hover) topped up with decorative dust, with the category hubs as hex badges on one orbit ring. **Neural**: the original force-directed 3D graph. |
-| **2D map** | **Force**, **Circle**, **Hex** (honeycomb tiles) and **Rings** (the flat twin of the orb: every item takes a dot of the dotted rows in its colored wedge, slowly replacing the filler dots as you add more, category hubs as hex badges on the outer ring, names on hover). Drag pans. |
+| **2D map** | **Force**, **Circle**, **Hex** (honeycomb tiles) and **Rings** (the flat twin of the orb: every item takes a dot of the dotted rows in its colored wedge, slowly replacing the filler dots as you add more; parked or unused items sit in the faint outer rim, category hubs as hex badges on the outer ring, names on hover). Drag pans. |
 | **Timeline** | One lane per category, placed by last-modified date. Recent weeks get more room than old months. |
 | **Skills** | A deck of every skill ranked by size, with its rough token cost and active/parked state. |
 | **Applications** | MCP servers, mods, agents and hooks as hex tiles. Agents kept in subfolders of `~/.claude/agents/` show their folder. |

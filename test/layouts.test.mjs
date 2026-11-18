@@ -67,6 +67,11 @@ test('layouts: rings put every item in the dotted annulus and the hubs on the ou
   for (const n of items) assert.ok(r(n) >= ctx.R * 0.39 && r(n) <= ctx.R * 0.93, n.id);
   for (const n of nodes.filter((x) => x.type === 'hub')) assert.ok(r(n) > ctx.R * 1.05, n.id);
   assert.equal(res.shell.size, items.length);
+  // Active items sit in the bright rows; parked or unused ones in the faint outer rim (spilling inward only when it's full).
+  const rimR = ctx.R * 0.82;
+  for (const n of items.filter((x) => x.active !== false)) assert.ok(r(n) < rimR, `${n.id} should be in the bright rows`);
+  const parked = items.filter((x) => x.active === false);
+  assert.ok(parked.filter((n) => r(n) > rimR).length >= parked.length / 2, 'most parked items sit in the rim');
   assert.equal(res.ring.size, nodes.filter((x) => x.type === 'hub').length);
 });
 
